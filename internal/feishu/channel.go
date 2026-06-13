@@ -2,13 +2,14 @@ package feishu
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
-	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	"github.com/larksuite/oapi-sdk-go/v3/channel"
 	"github.com/larksuite/oapi-sdk-go/v3/channel/types"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
@@ -203,9 +204,8 @@ func (f *FeishuChannel) Stop(ctx context.Context) error {
 }
 
 // HandleMessage processes an incoming Feishu message.
-// Instead of Stream+Append (which hits Feishu's message edit limit),
-// we use Send() for each logical segment — each becomes a separate message.
-// No edit limit, and the conversation reads naturally.
+// Uses card streaming via UpdateCard() to keep thinking and intermediate text
+// in a single card that updates in place.
 func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, cfg *config.Config, commands map[string]CommandHandler) error {
 	slog.Info("received feishu message",
 		"chat_id", msg.ChatID,
@@ -223,65 +223,50 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 		}
 	}
 
-	// Each segment is sent as a standalone message via Send(), no Append/Edit involved.
-	var segmentCount int
-	var totalBytes int
+	state := newCardState()
 
-	err := agent.ClaudeStreamWithTimeout(cfg.ClaudePath, msg.Content, cfg.WorkDir, func(chunk string) error {
-		segmentCount++
-		totalBytes += len(chunk)
-
-		input := &types.SendInput{
-			ChatID:   msg.ChatID,
-			Markdown: chunk,
-		}
-		// Only the first segment is a "reply" to the original message;
-		// subsequent segments are standalone messages in the chat.
-		if segmentCount == 1 {
-			input.ReplyMessageID = msg.MessageID
-		}
-
-		slog.Info("feishu: sending message segment",
-			"chat_id", msg.ChatID,
-			"segment#", segmentCount,
-			"bytes", len(chunk),
-			"is_reply", segmentCount == 1,
-		)
-
-		_, sendErr := ch.Send(ctx, input)
-		if sendErr != nil {
-			slog.Error("feishu: failed to send message segment",
-				"chat_id", msg.ChatID,
-				"segment#", segmentCount,
-				"bytes", len(chunk),
-				"error", sendErr,
-			)
-			return sendErr
-		}
-
-		slog.Info("feishu: message segment sent",
-			"chat_id", msg.ChatID,
-			"segment#", segmentCount,
-			"bytes", len(chunk),
-		)
-		return nil
+	streamCtrl, err := ch.Stream(ctx, &types.SendInput{
+		ChatID:         msg.ChatID,
+		ReplyMessageID: msg.MessageID,
+		Card:          state.BuildCard(),
 	})
-
 	if err != nil {
-		slog.Error("feishu: claude stream failed",
-			"chat_id", msg.ChatID,
-			"error", err,
-			"segments_sent", segmentCount,
-			"total_bytes", totalBytes,
-		)
+		slog.Error("feishu: failed to start card stream", "chat_id", msg.ChatID, "error", err)
 		return err
 	}
 
-	slog.Info("feishu: all segments completed",
-		"chat_id", msg.ChatID,
-		"total_segments", segmentCount,
-		"total_bytes", totalBytes,
-	)
+	err = agent.ClaudeStreamWithEventsTimeout(cfg.ClaudePath, msg.Content, cfg.WorkDir, func(event agent.StreamEvent) error {
+		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
+			if len(event.Text) > 150 {
+				return event.Text[:150]
+			}
+			return event.Text
+		}())
+		switch event.Type {
+		case "thinking":
+			state.AppendThinking(event.Text)
+		case "result":
+			state.SetFinal(event.Text)
+		}
+		return streamCtrl.UpdateCard(ctx, state.BuildCard())
+	})
+
+	streamCtrl.Close(ctx)
+
+	if err != nil {
+		slog.Error("feishu: claude stream failed", "chat_id", msg.ChatID, "error", err)
+		return err
+	}
+
+	// Log final card for debugging
+	finalCard := state.BuildCard()
+	if len(finalCard) > 3000 {
+		slog.Info("feishu: final card JSON", "preview", finalCard[:3000])
+	} else {
+		slog.Info("feishu: final card JSON", "card", finalCard)
+	}
+
+	slog.Info("feishu: card stream completed", "chat_id", msg.ChatID)
 	return nil
 }
 
@@ -383,22 +368,55 @@ func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardA
 	return nil
 }
 
-// BuildTaskCardJSON builds a Feishu interactive card from a list of task summaries.
+
+// taskButtonRow creates a v2 card column_set with action buttons.
+// v2 cards don't support the "action" tag; buttons must be inside column_set -> column.
+func taskButtonRow(buttons ...map[string]interface{}) map[string]interface{} {
+	columns := make([]map[string]interface{}, len(buttons))
+	for i, btn := range buttons {
+		columns[i] = map[string]interface{}{
+			"tag":    "column",
+			"width":  "auto",
+			"elements": []map[string]interface{}{btn},
+		}
+	}
+	return map[string]interface{}{
+		"tag":     "column_set",
+		"columns": columns,
+	}
+}
+
+// taskButton creates a v2 card button with value for SDK callback compatibility.
+func taskButton(text, buttonType, action, taskID string) map[string]interface{} {
+	value := map[string]string{"action": action, "task_id": taskID}
+	return map[string]interface{}{
+		"tag":  "button",
+		"text": map[string]string{"tag": "plain_text", "content": text},
+		"type": buttonType,
+		"value":     value,
+		"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+	}
+}
+
+// BuildTaskCardJSON builds a Feishu v2 interactive card from a list of task summaries.
 // Each task row has action buttons appropriate to its type (cron vs one-time).
 func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
 	if len(summaries) == 0 {
-		card := larkcard.NewMessageCard().
-			Header(larkcard.NewMessageCardHeader().
-				Template(larkcard.TemplateBlue).
-				Title(larkcard.NewMessageCardPlainText().Content("📋 任务列表"))).
-			Elements([]larkcard.MessageCardElement{
-				larkcard.NewMessageCardDiv().
-					Text(larkcard.NewMessageCardPlainText().Content("当前没有活跃任务")),
-			})
-		return card.Build().String()
+		card := map[string]interface{}{
+			"schema": "2.0",
+			"header": map[string]interface{}{
+				"template": "blue",
+				"title":    map[string]interface{}{"tag": "plain_text", "content": "📋 任务列表"},
+			},
+			"body": map[string]interface{}{
+				"elements": []map[string]interface{}{
+					{"tag": "markdown", "content": "当前没有活跃任务"},
+				},
+			},
+		}
+		bs, err := json.Marshal(card)
+		return string(bs), err
 	}
-
-	var elements []larkcard.MessageCardElement
 
 	var cronTasks, oneTimeTasks []daemon.TaskSummary
 	for _, t := range summaries {
@@ -409,107 +427,183 @@ func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
 		}
 	}
 
+	var elements []map[string]interface{}
+
 	if len(cronTasks) > 0 {
-		elements = append(elements,
-			larkcard.NewMessageCardDiv().
-				Text(larkcard.NewMessageCardPlainText().
-					Content("⏰ 定时任务")),
-		)
+		elements = append(elements, map[string]interface{}{
+			"tag": "markdown", "content": "⏰ **定时任务**",
+		})
 		for _, t := range cronTasks {
 			nextRun := t.NextRunAt
 			if nextRun == "" {
 				nextRun = "-"
 			}
-			row := fmt.Sprintf("**%s**  \nCron: `%s`  |  下次执行: %s  |  状态: %s",
+			row := fmt.Sprintf("**%s**\nCron: `%s` | 下次执行: %s | 状态: %s",
 				t.Name, t.Schedule, nextRun, t.Status)
 			if t.Prompt != "" {
 				desc := t.Prompt
 				if len([]rune(desc)) > 100 {
 					desc = string([]rune(desc)[:100]) + "…"
 				}
-				row += fmt.Sprintf("  \n> %s", desc)
+				row += fmt.Sprintf("\n> %s", desc)
 			}
+			elements = append(elements, map[string]interface{}{"tag": "markdown", "content": row})
 
-			var btns []larkcard.MessageCardActionElement
 			if t.Status == "paused" {
-				// Paused cron task: show resume + delete
-				resumeBtn := larkcard.NewMessageCardEmbedButton().
-					Text(larkcard.NewMessageCardPlainText().Content("▶ 恢复")).
-					Type(larkcard.MessageCardButtonTypePrimary).
-					Value(map[string]interface{}{"action": "resume", "task_id": t.ID})
-				deleteBtn := larkcard.NewMessageCardEmbedButton().
-					Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
-					Type(larkcard.MessageCardButtonTypeDanger).
-					Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
-				btns = []larkcard.MessageCardActionElement{resumeBtn, deleteBtn}
+				elements = append(elements, taskButtonRow(
+					taskButton("▶ 恢复", "primary", "resume", t.ID),
+					taskButton("🗑 删除", "danger", "delete", t.ID),
+				))
 			} else {
-				// Active cron task: show pause + delete
-				pauseBtn := larkcard.NewMessageCardEmbedButton().
-					Text(larkcard.NewMessageCardPlainText().Content("⏸ 暂停")).
-					Type(larkcard.MessageCardButtonTypeDanger).
-					Value(map[string]interface{}{"action": "pause", "task_id": t.ID})
-				deleteBtn := larkcard.NewMessageCardEmbedButton().
-					Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
-					Type(larkcard.MessageCardButtonTypeDanger).
-					Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
-				btns = []larkcard.MessageCardActionElement{pauseBtn, deleteBtn}
+				elements = append(elements, taskButtonRow(
+					taskButton("⏸ 暂停", "danger", "pause", t.ID),
+					taskButton("🗑 删除", "danger", "delete", t.ID),
+				))
 			}
-
-			elements = append(elements,
-				larkcard.NewMessageCardDiv().
-					Text(larkcard.NewMessageCardLarkMd().Content(row)),
-				larkcard.NewMessageCardAction().
-					Actions(btns),
-			)
 		}
 	}
 
 	if len(oneTimeTasks) > 0 {
-		elements = append(elements,
-			larkcard.NewMessageCardDiv().
-				Text(larkcard.NewMessageCardPlainText().
-					Content("📌 一次性任务")),
-		)
+		elements = append(elements, map[string]interface{}{
+			"tag": "markdown", "content": "📌 **一次性任务**",
+		})
 		for _, t := range oneTimeTasks {
 			runAt := t.RunAt
 			if runAt == "" {
 				runAt = "-"
 			}
-			row := fmt.Sprintf("**%s**  \n计划时间: %s  |  状态: %s",
-				t.Name, runAt, t.Status)
+			row := fmt.Sprintf("**%s**\n计划时间: %s | 状态: %s", t.Name, runAt, t.Status)
 			if t.Prompt != "" {
 				desc := t.Prompt
 				if len([]rune(desc)) > 100 {
 					desc = string([]rune(desc)[:100]) + "…"
 				}
-				row += fmt.Sprintf("  \n> %s", desc)
+				row += fmt.Sprintf("\n> %s", desc)
 			}
-
-			deleteBtn := larkcard.NewMessageCardEmbedButton().
-				Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
-				Type(larkcard.MessageCardButtonTypeDanger).
-				Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
-
-			elements = append(elements,
-				larkcard.NewMessageCardDiv().
-					Text(larkcard.NewMessageCardLarkMd().Content(row)),
-				larkcard.NewMessageCardAction().
-					Actions([]larkcard.MessageCardActionElement{deleteBtn}),
-			)
+			elements = append(elements, map[string]interface{}{"tag": "markdown", "content": row})
+			elements = append(elements, taskButtonRow(
+				taskButton("🗑 删除", "danger", "delete", t.ID),
+			))
 		}
 	}
 
-	card := larkcard.NewMessageCard().
-		Header(larkcard.NewMessageCardHeader().
-			Template(larkcard.TemplateBlue).
-			Title(larkcard.NewMessageCardPlainText().Content(fmt.Sprintf("📋 任务列表 (%d)", len(summaries))))).
-		Elements(elements)
+	card := map[string]interface{}{
+		"schema": "2.0",
+		"header": map[string]interface{}{
+			"template": "blue",
+			"title":    map[string]interface{}{"tag": "plain_text", "content": fmt.Sprintf("📋 任务列表 (%d)", len(summaries))},
+		},
+		"body": map[string]interface{}{
+			"elements": elements,
+		},
+	}
 
-	raw, err := card.Build().String()
+	bs, err := json.Marshal(card)
 	if err != nil {
 		return "", err
 	}
-	return raw, nil
+	return string(bs), nil
+}
+
+// cardState accumulates thinking and final text for a card stream.
+type cardState struct {
+	mu        sync.Mutex
+	thinking  strings.Builder
+	finalText strings.Builder
+	gotResult bool
+}
+
+const cardThinkingMaxLen = 8000
+
+func newCardState() *cardState {
+	return &cardState{}
+}
+
+func (s *cardState) AppendThinking(text string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.thinking.WriteString(text)
+}
+
+func (s *cardState) SetFinal(text string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.gotResult = true
+	s.finalText.WriteString(text)
+}
+
+// thinkingTruncated returns truncated thinking content with ellipsis if too long.
+func (s *cardState) thinkingTruncated() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	text := s.thinking.String()
+	if len(text) <= cardThinkingMaxLen {
+		return text
+	}
+	return text[:cardThinkingMaxLen] + "\n\n... (省略)"
+}
+
+func (s *cardState) finalContent() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.finalText.String()
+}
+
+func (s *cardState) BuildCard() string {
+	s.mu.Lock()
+	hasFinal := s.finalText.Len() > 0
+	s.mu.Unlock()
+
+	thinking := s.thinkingTruncated()
+	final := s.finalContent()
+
+	headerTitle := "🤖 Claude Code"
+	if hasFinal {
+		headerTitle = "✅ Claude Code"
+	}
+
+	// Build v2 card JSON with markdown tag for proper rendering
+	elements := []map[string]interface{}{
+		{
+			"tag":     "markdown",
+			"content": "💭 **思考过程**\n\n" + thinking,
+		},
+	}
+
+	if hasFinal {
+		elements = append(elements,
+			map[string]interface{}{"tag": "hr"},
+			map[string]interface{}{
+				"tag":     "markdown",
+				"content": "📝 **最终回复**\n\n" + final,
+			},
+		)
+	}
+
+	card := map[string]interface{}{
+		"schema": "2.0",
+		"header": map[string]interface{}{
+			"template": "blue",
+			"title": map[string]interface{}{
+				"tag":     "plain_text",
+				"content": headerTitle,
+			},
+		},
+		"body": map[string]interface{}{
+			"elements": elements,
+		},
+	}
+
+	bs, _ := json.Marshal(card)
+	result := string(bs)
+
+	slog.Debug("feishu: card JSON", "card", result)
+	if len(result) > 2000 {
+		slog.Info("feishu: card JSON truncated", "preview", result[:2000])
+	} else {
+		slog.Info("feishu: card JSON", "card", result)
+	}
+	return result
 }
 
 // splitMessage splits a long string into chunks of at most maxLen characters,
