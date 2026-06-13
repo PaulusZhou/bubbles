@@ -40,6 +40,16 @@ type FeishuNotifier interface {
 	NotifyTaskCompletion(ctx context.Context, completion TaskCompletion) error
 }
 
+// TaskSummary holds formatted data for a single task, used by card UIs.
+type TaskSummary struct {
+	ID        string
+	Name      string
+	Schedule  string // "" = one-time task
+	RunAt     string // formatted, "-" if zero
+	NextRunAt string // formatted, "-" if zero
+	Status    string
+}
+
 // Scheduler manages cron jobs and one-time tasks.
 type Scheduler struct {
 	cron            *cron.Cron
@@ -438,9 +448,8 @@ func (s *Scheduler) handleTaskDelete(raw json.RawMessage) (interface{}, error) {
 
 	slog.Info("ipc: task.delete received", "task_id", p.ID)
 
-	s.removeTask(p.ID)
-	if err := s.store.DeleteTask(p.ID); err != nil {
-		slog.Error("ipc: task.delete db error", "task_id", p.ID, "error", err)
+	if err := s.DeleteTask(p.ID); err != nil {
+		slog.Error("ipc: task.delete failed", "task_id", p.ID, "error", err)
 		return nil, err
 	}
 
@@ -457,9 +466,8 @@ func (s *Scheduler) handleTaskPause(raw json.RawMessage) (interface{}, error) {
 
 	slog.Info("ipc: task.pause received", "task_id", p.ID)
 
-	s.removeTask(p.ID)
-	if err := s.store.UpdateTaskStatus(p.ID, "paused"); err != nil {
-		slog.Error("ipc: task.pause db error", "task_id", p.ID, "error", err)
+	if err := s.PauseTask(p.ID); err != nil {
+		slog.Error("ipc: task.pause failed", "task_id", p.ID, "error", err)
 		return nil, err
 	}
 
@@ -476,18 +484,9 @@ func (s *Scheduler) handleTaskResume(raw json.RawMessage) (interface{}, error) {
 
 	slog.Info("ipc: task.resume received", "task_id", p.ID)
 
-	if err := s.store.UpdateTaskStatus(p.ID, "active"); err != nil {
-		slog.Error("ipc: task.resume db error", "task_id", p.ID, "error", err)
+	if err := s.ResumeTask(p.ID); err != nil {
+		slog.Error("ipc: task.resume failed", "task_id", p.ID, "error", err)
 		return nil, err
-	}
-
-	task, err := s.store.GetTask(p.ID)
-	if err != nil {
-		slog.Error("ipc: task.resume failed to re-fetch task", "task_id", p.ID, "error", err)
-		return nil, err
-	}
-	if task != nil && task.Schedule != "" {
-		s.scheduleTask(task)
 	}
 
 	slog.Info("ipc: task.resume completed", "task_id", p.ID)
@@ -568,20 +567,92 @@ func (s *Scheduler) handleTaskLogs(raw json.RawMessage) (interface{}, error) {
 	return results, nil
 }
 
-// FormatActiveTaskList returns a Markdown-formatted list of all active tasks,
+// GetAllTaskSummary returns structured data for all tasks (active, paused, done).
+func (s *Scheduler) GetAllTaskSummary() ([]TaskSummary, error) {
+	tasks, err := s.store.ListTasks()
+	if err != nil {
+		return nil, err
+	}
+
+	var summaries []TaskSummary
+	for _, t := range tasks {
+		name := t.Name
+		if name == "" {
+			name = t.ID
+		}
+		summary := TaskSummary{
+			ID:     t.ID,
+			Name:   name,
+			Status: t.Status,
+		}
+		if t.Schedule != "" {
+			summary.Schedule = t.Schedule
+			if !t.NextRunAt.IsZero() {
+				summary.NextRunAt = t.NextRunAt.Format("2006-01-02 15:04")
+			}
+		} else {
+			if !t.RunAt.IsZero() {
+				summary.RunAt = t.RunAt.Format("2006-01-02 15:04")
+			}
+		}
+		summaries = append(summaries, summary)
+	}
+	return summaries, nil
+}
+
+// PauseTask removes a task from the cron scheduler and marks it as paused.
+func (s *Scheduler) PauseTask(taskID string) error {
+	s.removeTask(taskID)
+	if err := s.store.UpdateTaskStatus(taskID, "paused"); err != nil {
+		return err
+	}
+	slog.Info("scheduler: task paused", "task_id", taskID)
+	return nil
+}
+
+// ResumeTask marks a task as active and re-schedules it if it's a cron task.
+func (s *Scheduler) ResumeTask(taskID string) error {
+	if err := s.store.UpdateTaskStatus(taskID, "active"); err != nil {
+		return err
+	}
+	task, err := s.store.GetTask(taskID)
+	if err != nil {
+		return err
+	}
+	if task != nil && task.Schedule != "" {
+		s.scheduleTask(task)
+	}
+	slog.Info("scheduler: task resumed", "task_id", taskID)
+	return nil
+}
+
+// DeleteTask removes a task from the scheduler and deletes it from the database.
+func (s *Scheduler) DeleteTask(taskID string) error {
+	s.removeTask(taskID)
+	if err := s.store.DeleteTask(taskID); err != nil {
+		return err
+	}
+	slog.Info("scheduler: task deleted", "task_id", taskID)
+	return nil
+}
+
+// FormatActiveTaskList returns a Markdown-formatted list of all tasks,
 // split into cron tasks and one-time tasks. Pure domain logic, no Feishu dependency.
 func (s *Scheduler) FormatActiveTaskList() (string, error) {
-	tasks, err := s.store.ListActiveTasks()
+	summaries, err := s.GetAllTaskSummary()
 	if err != nil {
 		return "", err
 	}
 
-	if len(tasks) == 0 {
+	if len(summaries) == 0 {
 		return "📋 当前没有活跃任务", nil
 	}
 
-	var cronTasks, oneTimeTasks []model.Task
-	for _, t := range tasks {
+	var sb strings.Builder
+	sb.WriteString("📋 **任务列表**\n")
+
+	var cronTasks, oneTimeTasks []TaskSummary
+	for _, t := range summaries {
 		if t.Schedule != "" {
 			cronTasks = append(cronTasks, t)
 		} else {
@@ -589,40 +660,29 @@ func (s *Scheduler) FormatActiveTaskList() (string, error) {
 		}
 	}
 
-	var sb strings.Builder
-	sb.WriteString("📋 **任务列表**\n")
-
 	if len(cronTasks) > 0 {
 		sb.WriteString("\n⏰ **定时任务**\n")
 		for _, t := range cronTasks {
-			nextRun := "-"
-			if !t.NextRunAt.IsZero() {
-				nextRun = t.NextRunAt.Format("2006-01-02 15:04")
+			nextRun := t.NextRunAt
+			if nextRun == "" {
+				nextRun = "-"
 			}
-			name := t.Name
-			if name == "" {
-				name = t.ID
-			}
-			sb.WriteString(fmt.Sprintf("  • %s — Cron: %s，下次执行: %s\n", name, t.Schedule, nextRun))
+			sb.WriteString(fmt.Sprintf("  • %s — Cron: %s，下次执行: %s\n", t.Name, t.Schedule, nextRun))
 		}
 	}
 
 	if len(oneTimeTasks) > 0 {
 		sb.WriteString("\n📌 **一次性任务**\n")
 		for _, t := range oneTimeTasks {
-			runAt := "-"
-			if !t.RunAt.IsZero() {
-				runAt = t.RunAt.Format("2006-01-02 15:04")
+			runAt := t.RunAt
+			if runAt == "" {
+				runAt = "-"
 			}
-			name := t.Name
-			if name == "" {
-				name = t.ID
-			}
-			sb.WriteString(fmt.Sprintf("  • %s — 计划时间: %s，状态: %s\n", name, runAt, t.Status))
+			sb.WriteString(fmt.Sprintf("  • %s — 计划时间: %s，状态: %s\n", t.Name, runAt, t.Status))
 		}
 	}
 
-	sb.WriteString(fmt.Sprintf("\n共 **%d** 个任务", len(tasks)))
+	sb.WriteString(fmt.Sprintf("\n共 **%d** 个任务", len(summaries)))
 	return sb.String(), nil
 }
 

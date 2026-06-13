@@ -8,6 +8,7 @@ import (
 	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
+	larkcard "github.com/larksuite/oapi-sdk-go/v3/card"
 	"github.com/larksuite/oapi-sdk-go/v3/channel"
 	"github.com/larksuite/oapi-sdk-go/v3/channel/types"
 	larkcore "github.com/larksuite/oapi-sdk-go/v3/core"
@@ -24,10 +25,11 @@ type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.Norma
 
 // FeishuChannel wraps the SDK Channel and manages the Feishu bot lifecycle.
 type FeishuChannel struct {
-	ch        types.Channel
-	cfg       *config.Config
-	commands  map[string]CommandHandler // prefix -> handler
-	defaultChatID string
+	ch              types.Channel
+	cfg             *config.Config
+	commands        map[string]CommandHandler // prefix -> handler
+	defaultChatID    string
+	scheduler       *daemon.Scheduler // for direct task operations on card callbacks
 }
 
 // New creates a FeishuChannel from the given config.
@@ -65,6 +67,12 @@ func New(cfg *config.Config) *FeishuChannel {
 func (f *FeishuChannel) RegisterCommand(prefix string, handler CommandHandler) {
 	f.commands[prefix] = handler
 	slog.Info("feishu: command registered", "prefix", prefix)
+}
+
+// SetScheduler sets the scheduler for direct task operations (pause/resume/delete).
+// Must be called before Start().
+func (f *FeishuChannel) SetScheduler(scheduler *daemon.Scheduler) {
+	f.scheduler = scheduler
 }
 
 // NotifyTaskCompletion sends a task completion notification to Feishu.
@@ -161,6 +169,14 @@ func (f *FeishuChannel) Start(ctx context.Context) error {
 		return HandleMessage(ctx, ch, msg, f.cfg, f.commands)
 	})
 	slog.Info("feishu message handler registered")
+
+	// Register card action handler for interactive task cards
+	if f.scheduler != nil {
+		ch.OnCardAction(func(ctx context.Context, event *types.CardActionEvent) error {
+			return f.handleCardAction(ctx, event)
+		})
+		slog.Info("feishu card action handler registered")
+	}
 
 	go func() {
 		slog.Info("feishu channel connecting to websocket...")
@@ -310,6 +326,176 @@ func fallbackSend(ctx context.Context, ch types.Channel, msg *types.NormalizedMe
 	}
 
 	return nil
+}
+
+// handleCardAction processes button clicks on interactive task cards.
+func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardActionEvent) error {
+	action, _ := event.Action.Value["action"].(string)
+	taskID, _ := event.Action.Value["task_id"].(string)
+
+	slog.Info("feishu: card action received",
+		"action", action,
+		"task_id", taskID,
+		"chat_id", event.ChatID,
+		"operator", event.Operator.OpenID,
+	)
+
+	if taskID == "" || action == "" {
+		return nil
+	}
+
+	var toastMsg string
+	switch action {
+	case "pause":
+		if err := f.scheduler.PauseTask(taskID); err != nil {
+			slog.Error("feishu: pause task failed", "task_id", taskID, "error", err)
+			toastMsg = fmt.Sprintf("❌ 暂停失败: %v", err)
+		} else {
+			toastMsg = "✅ 任务已暂停"
+		}
+	case "resume":
+		if err := f.scheduler.ResumeTask(taskID); err != nil {
+			slog.Error("feishu: resume task failed", "task_id", taskID, "error", err)
+			toastMsg = fmt.Sprintf("❌ 恢复失败: %v", err)
+		} else {
+			toastMsg = "✅ 任务已恢复"
+		}
+	case "delete":
+		if err := f.scheduler.DeleteTask(taskID); err != nil {
+			slog.Error("feishu: delete task failed", "task_id", taskID, "error", err)
+			toastMsg = fmt.Sprintf("❌ 删除失败: %v", err)
+		} else {
+			toastMsg = "🗑️ 任务已删除"
+		}
+	default:
+		slog.Warn("feishu: unknown card action", "action", action)
+		return nil
+	}
+
+	// Send a follow-up message to acknowledge the action
+	_, err := f.ch.Send(ctx, &types.SendInput{
+		ChatID: event.ChatID,
+		Text:   toastMsg,
+	})
+	if err != nil {
+		slog.Error("feishu: failed to send action acknowledgment", "error", err)
+	}
+	return nil
+}
+
+// BuildTaskCardJSON builds a Feishu interactive card from a list of task summaries.
+// Each task row has action buttons appropriate to its type (cron vs one-time).
+func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
+	if len(summaries) == 0 {
+		card := larkcard.NewMessageCard().
+			Header(larkcard.NewMessageCardHeader().
+				Template(larkcard.TemplateBlue).
+				Title(larkcard.NewMessageCardPlainText().Content("📋 任务列表"))).
+			Elements([]larkcard.MessageCardElement{
+				larkcard.NewMessageCardDiv().
+					Text(larkcard.NewMessageCardPlainText().Content("当前没有活跃任务")),
+			})
+		return card.Build().String()
+	}
+
+	var elements []larkcard.MessageCardElement
+
+	var cronTasks, oneTimeTasks []daemon.TaskSummary
+	for _, t := range summaries {
+		if t.Schedule != "" {
+			cronTasks = append(cronTasks, t)
+		} else {
+			oneTimeTasks = append(oneTimeTasks, t)
+		}
+	}
+
+	if len(cronTasks) > 0 {
+		elements = append(elements,
+			larkcard.NewMessageCardDiv().
+				Text(larkcard.NewMessageCardPlainText().
+					Content("⏰ 定时任务")),
+		)
+		for _, t := range cronTasks {
+			nextRun := t.NextRunAt
+			if nextRun == "" {
+				nextRun = "-"
+			}
+			row := fmt.Sprintf("**%s**  \nCron: `%s`  |  下次执行: %s  |  状态: %s",
+				t.Name, t.Schedule, nextRun, t.Status)
+
+			var btns []larkcard.MessageCardActionElement
+			if t.Status == "paused" {
+				// Paused cron task: show resume + delete
+				resumeBtn := larkcard.NewMessageCardEmbedButton().
+					Text(larkcard.NewMessageCardPlainText().Content("▶ 恢复")).
+					Type(larkcard.MessageCardButtonTypePrimary).
+					Value(map[string]interface{}{"action": "resume", "task_id": t.ID})
+				deleteBtn := larkcard.NewMessageCardEmbedButton().
+					Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
+					Type(larkcard.MessageCardButtonTypeDanger).
+					Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
+				btns = []larkcard.MessageCardActionElement{resumeBtn, deleteBtn}
+			} else {
+				// Active cron task: show pause + delete
+				pauseBtn := larkcard.NewMessageCardEmbedButton().
+					Text(larkcard.NewMessageCardPlainText().Content("⏸ 暂停")).
+					Type(larkcard.MessageCardButtonTypeDanger).
+					Value(map[string]interface{}{"action": "pause", "task_id": t.ID})
+				deleteBtn := larkcard.NewMessageCardEmbedButton().
+					Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
+					Type(larkcard.MessageCardButtonTypeDanger).
+					Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
+				btns = []larkcard.MessageCardActionElement{pauseBtn, deleteBtn}
+			}
+
+			elements = append(elements,
+				larkcard.NewMessageCardDiv().
+					Text(larkcard.NewMessageCardLarkMd().Content(row)),
+				larkcard.NewMessageCardAction().
+					Actions(btns),
+			)
+		}
+	}
+
+	if len(oneTimeTasks) > 0 {
+		elements = append(elements,
+			larkcard.NewMessageCardDiv().
+				Text(larkcard.NewMessageCardPlainText().
+					Content("📌 一次性任务")),
+		)
+		for _, t := range oneTimeTasks {
+			runAt := t.RunAt
+			if runAt == "" {
+				runAt = "-"
+			}
+			row := fmt.Sprintf("**%s**  \n计划时间: %s  |  状态: %s",
+				t.Name, runAt, t.Status)
+
+			deleteBtn := larkcard.NewMessageCardEmbedButton().
+				Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).
+				Type(larkcard.MessageCardButtonTypeDanger).
+				Value(map[string]interface{}{"action": "delete", "task_id": t.ID})
+
+			elements = append(elements,
+				larkcard.NewMessageCardDiv().
+					Text(larkcard.NewMessageCardLarkMd().Content(row)),
+				larkcard.NewMessageCardAction().
+					Actions([]larkcard.MessageCardActionElement{deleteBtn}),
+			)
+		}
+	}
+
+	card := larkcard.NewMessageCard().
+		Header(larkcard.NewMessageCardHeader().
+			Template(larkcard.TemplateBlue).
+			Title(larkcard.NewMessageCardPlainText().Content(fmt.Sprintf("📋 任务列表 (%d)", len(summaries))))).
+		Elements(elements)
+
+	raw, err := card.Build().String()
+	if err != nil {
+		return "", err
+	}
+	return raw, nil
 }
 
 // splitMessage splits a long string into chunks of at most maxLen characters,

@@ -204,6 +204,7 @@ func (s *Store) GetLastExecutionLog(taskID string) (*model.ExecutionLog, error) 
 	return &e, nil
 }
 
+
 // --- helpers ---
 
 func scanTask(row *sql.Row) (*model.Task, error) {

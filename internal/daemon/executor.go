@@ -118,6 +118,23 @@ func (e *Executor) Run(taskID string) error {
 		// Note: one-time task status is marked as "done" by the scheduler BEFORE
 		// dispatch to prevent re-triggering. Do not update it here.
 
+		// Clean up: for one-time tasks (status = "done"), delete the task and its execution logs.
+		// This runs after the task execution completes, whether successful or failed.
+		if task.Status == "done" {
+			if err := e.store.DeleteTask(taskID); err != nil {
+				slog.Error("executor: failed to delete completed one-time task",
+					"task_id", taskID,
+					"exec_id", execID,
+					"error", err,
+				)
+			} else {
+				slog.Info("executor: completed one-time task deleted",
+					"task_id", taskID,
+					"exec_id", execID,
+				)
+			}
+		}
+
 		slog.Info("executor: task execution completed",
 			"task_id", taskID,
 			"exec_id", execID,

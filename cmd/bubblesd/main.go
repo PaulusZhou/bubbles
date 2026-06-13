@@ -62,16 +62,33 @@ func main() {
 		slog.Info("feishu configuration detected, initializing channel", "app_id", cfg.FeishuAppID)
 		fch := feishu.New(cfg)
 		if fch != nil {
-			// 注册 /cron 命令：查询活跃任务列表
+			fch.SetScheduler(scheduler)
+
+			// 注册 /cron 命令：发送交互式任务卡片
 			fch.RegisterCommand("/cron", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
-				md, err := scheduler.FormatActiveTaskList()
+				summaries, err := scheduler.GetAllTaskSummary()
 				if err != nil {
 					slog.Error("feishu: /cron failed", "error", err)
-					md = fmt.Sprintf("❌ 查询任务失败: %v", err)
+					_, sendErr := ch.Send(ctx, &types.SendInput{
+						ChatID:         msg.ChatID,
+						Markdown:       fmt.Sprintf("❌ 查询任务失败: %v", err),
+						ReplyMessageID: msg.MessageID,
+					})
+					return sendErr
+				}
+				cardJSON, err := feishu.BuildTaskCardJSON(summaries)
+				if err != nil {
+					slog.Error("feishu: /cron card build failed", "error", err)
+					_, sendErr := ch.Send(ctx, &types.SendInput{
+						ChatID:         msg.ChatID,
+						Markdown:       "❌ 生成卡片失败",
+						ReplyMessageID: msg.MessageID,
+					})
+					return sendErr
 				}
 				_, sendErr := ch.Send(ctx, &types.SendInput{
 					ChatID:         msg.ChatID,
-					Markdown:       md,
+					Card:           cardJSON,
 					ReplyMessageID: msg.MessageID,
 				})
 				return sendErr
