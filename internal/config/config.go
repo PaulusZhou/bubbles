@@ -6,9 +6,16 @@ import (
 	"path/filepath"
 
 	"gopkg.in/yaml.v3"
-
-	"github.com/pauluszhou/bubbles/internal/daemon"
 )
+
+// DefaultDataDir returns the default data directory for bubbles.
+func DefaultDataDir() string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		home = "/tmp"
+	}
+	return filepath.Join(home, ".bubbles")
+}
 
 // Config holds application configuration.
 type Config struct {
@@ -17,16 +24,17 @@ type Config struct {
 	FeishuChatID    string `yaml:"feishu_chat_id"`
 	ClaudePath      string `yaml:"claude_path"`
 	DataDir         string `yaml:"data_dir"`
+	WorkDir         string `yaml:"work_dir"`
 }
 
 // configPath returns the path to the config file.
 func configPath() string {
-	return filepath.Join(daemon.DefaultDataDir(), "config.yaml")
+	return filepath.Join(DefaultDataDir(), "config.yaml")
 }
 
 // Load reads configuration from ~/.bubbles/config.yaml.
 // Environment variables override config file values if set.
-func Load() *Config {
+func Load() (*Config, error) {
 	cfg := &Config{}
 
 	// Read config file
@@ -40,13 +48,13 @@ func Load() *Config {
 
 	// Defaults
 	if cfg.DataDir == "" {
-		cfg.DataDir = daemon.DefaultDataDir()
+		cfg.DataDir = DefaultDataDir()
 	}
 	if cfg.ClaudePath == "" {
 		cfg.ClaudePath = "claude"
 	}
 
-	// Environment variable overrides (for backward compatibility)
+	// Environment variable overrides
 	if v := os.Getenv("FEISHU_APP_ID"); v != "" {
 		cfg.FeishuAppID = v
 	}
@@ -60,7 +68,12 @@ func Load() *Config {
 		cfg.DataDir = v
 	}
 
-	return cfg
+	// Validate required fields
+	if cfg.WorkDir == "" {
+		return nil, fmt.Errorf("work_dir is required in %s", path)
+	}
+
+	return cfg, nil
 }
 
 // DBPath returns the path to the SQLite database file.

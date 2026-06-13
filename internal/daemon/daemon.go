@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"syscall"
 	"time"
+
+	"github.com/pauluszhou/bubbles/internal/config"
 )
 
 const (
@@ -17,12 +19,9 @@ const (
 )
 
 // DefaultDataDir returns the default data directory for bubbles.
+// Deprecated: Use config.DefaultDataDir() instead.
 func DefaultDataDir() string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = "/tmp"
-	}
-	return filepath.Join(home, ".bubbles")
+	return config.DefaultDataDir()
 }
 
 func SocketPath() string {

@@ -227,7 +227,7 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 	var segmentCount int
 	var totalBytes int
 
-	err := agent.ClaudeStreamWithTimeout(cfg.ClaudePath, msg.Content, "", func(chunk string) error {
+	err := agent.ClaudeStreamWithTimeout(cfg.ClaudePath, msg.Content, cfg.WorkDir, func(chunk string) error {
 		segmentCount++
 		totalBytes += len(chunk)
 
@@ -292,7 +292,7 @@ func fallbackSend(ctx context.Context, ch types.Channel, msg *types.NormalizedMe
 		"reply_to", msg.MessageID,
 	)
 
-	result := agent.ClaudeWithTimeout(msg.Content, "")
+	result := agent.ClaudeWithTimeout(msg.Content, cfg.WorkDir)
 	output := result.Output
 	if result.Error != nil {
 		slog.Error("feishu: claude execution failed in fallback mode",
@@ -422,6 +422,13 @@ func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
 			}
 			row := fmt.Sprintf("**%s**  \nCron: `%s`  |  下次执行: %s  |  状态: %s",
 				t.Name, t.Schedule, nextRun, t.Status)
+			if t.Prompt != "" {
+				desc := t.Prompt
+				if len([]rune(desc)) > 100 {
+					desc = string([]rune(desc)[:100]) + "…"
+				}
+				row += fmt.Sprintf("  \n> %s", desc)
+			}
 
 			var btns []larkcard.MessageCardActionElement
 			if t.Status == "paused" {
@@ -470,6 +477,13 @@ func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
 			}
 			row := fmt.Sprintf("**%s**  \n计划时间: %s  |  状态: %s",
 				t.Name, runAt, t.Status)
+			if t.Prompt != "" {
+				desc := t.Prompt
+				if len([]rune(desc)) > 100 {
+					desc = string([]rune(desc)[:100]) + "…"
+				}
+				row += fmt.Sprintf("  \n> %s", desc)
+			}
 
 			deleteBtn := larkcard.NewMessageCardEmbedButton().
 				Text(larkcard.NewMessageCardPlainText().Content("🗑 删除")).

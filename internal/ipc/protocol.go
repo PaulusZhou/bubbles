@@ -18,8 +18,7 @@ type CreateTaskParams struct {
 	Name     string `json:"name"`
 	Prompt   string `json:"prompt"`
 	Schedule string `json:"schedule,omitempty"`
-	RunAt    string `json:"run_at,omitempty"`    // RFC3339
-	WorkDir  string `json:"work_dir,omitempty"`
+	RunAt    string `json:"run_at,omitempty"` // RFC3339
 }
 
 type TaskIDParams struct {

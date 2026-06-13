@@ -13,6 +13,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/pauluszhou/bubbles/internal/config"
 	"github.com/pauluszhou/bubbles/internal/ipc"
 	"github.com/pauluszhou/bubbles/internal/model"
 	"github.com/pauluszhou/bubbles/internal/store"
@@ -44,6 +45,7 @@ type FeishuNotifier interface {
 type TaskSummary struct {
 	ID        string
 	Name      string
+	Prompt    string // task description / prompt
 	Schedule  string // "" = one-time task
 	RunAt     string // formatted, "-" if zero
 	NextRunAt string // formatted, "-" if zero
@@ -56,17 +58,19 @@ type Scheduler struct {
 	store           *store.Store
 	executor        *Executor
 	ipc             *ipc.Server
+	cfg             *config.Config
 	started         time.Time
 	entryMap        map[string]cron.EntryID // taskID -> cron entry ID
 	feishuStopper   FeishuStopper
 	feishuNotifier  FeishuNotifier
 }
 
-func NewScheduler(s *store.Store) *Scheduler {
+func NewScheduler(s *store.Store, cfg *config.Config) *Scheduler {
 	return &Scheduler{
 		cron:     cron.New(), // 标准 5 段 cron
 		store:    s,
-		executor: NewExecutor(s),
+		executor: NewExecutor(s, cfg),
+		cfg:      cfg,
 		entryMap: make(map[string]cron.EntryID),
 	}
 }
@@ -315,7 +319,6 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		"name", p.Name,
 		"schedule", p.Schedule,
 		"run_at", p.RunAt,
-		"work_dir", p.WorkDir,
 		"prompt_len", len(p.Prompt),
 	)
 
@@ -324,7 +327,6 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		Name:      p.Name,
 		Prompt:    p.Prompt,
 		Schedule:  p.Schedule,
-		WorkDir:   p.WorkDir,
 		Status:    "active",
 		CreatedAt: time.Now(),
 	}
@@ -583,6 +585,7 @@ func (s *Scheduler) GetAllTaskSummary() ([]TaskSummary, error) {
 		summary := TaskSummary{
 			ID:     t.ID,
 			Name:   name,
+			Prompt: t.Prompt,
 			Status: t.Status,
 		}
 		if t.Schedule != "" {

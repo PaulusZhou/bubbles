@@ -19,8 +19,12 @@ import (
 
 func main() {
 	// 加载配置
-	cfg := config.Load()
-	slog.Info("bubblesd starting", "data_dir", cfg.DataDir, "feishu_app_id", cfg.FeishuAppID, "claude_path", cfg.ClaudePath)
+	cfg, err := config.Load()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
+		os.Exit(1)
+	}
+	slog.Info("bubblesd starting", "data_dir", cfg.DataDir, "work_dir", cfg.WorkDir, "feishu_app_id", cfg.FeishuAppID, "claude_path", cfg.ClaudePath)
 
 	// 确保数据目录存在
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
@@ -55,7 +59,7 @@ func main() {
 	slog.Info("database opened", "path", cfg.DBPath(), "duration", time.Since(dbStart))
 
 	// 创建调度器
-	scheduler := daemon.NewScheduler(s)
+	scheduler := daemon.NewScheduler(s, cfg)
 
 	// 如果配置了飞书，启动飞书 Channel
 	if cfg.FeishuAppID != "" {

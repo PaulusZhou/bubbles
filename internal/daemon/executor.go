@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/pauluszhou/bubbles/internal/agent"
+	"github.com/pauluszhou/bubbles/internal/config"
 	"github.com/pauluszhou/bubbles/internal/model"
 	"github.com/pauluszhou/bubbles/internal/store"
 )
@@ -16,10 +17,11 @@ import (
 type Executor struct {
 	store           *store.Store
 	feishuNotifier  FeishuNotifier
+	workDir         string
 }
 
-func NewExecutor(s *store.Store) *Executor {
-	return &Executor{store: s}
+func NewExecutor(s *store.Store, cfg *config.Config) *Executor {
+	return &Executor{store: s, workDir: cfg.WorkDir}
 }
 
 // SetFeishuNotifier sets the notifier for task completion events.
@@ -45,7 +47,7 @@ func (e *Executor) Run(taskID string) error {
 		"task_id", taskID,
 		"task_name", task.Name,
 		"exec_id", execID,
-		"work_dir", task.WorkDir,
+		"work_dir", e.workDir,
 		"prompt_len", len(task.Prompt),
 	)
 
@@ -72,10 +74,10 @@ func (e *Executor) Run(taskID string) error {
 		slog.Info("executor: invoking claude agent",
 			"task_id", taskID,
 			"exec_id", execID,
-			"work_dir", task.WorkDir,
+			"work_dir", e.workDir,
 		)
 
-		result := agent.ClaudeWithTimeout(task.Prompt, task.WorkDir)
+		result := agent.ClaudeWithTimeout(task.Prompt, e.workDir)
 		endedAt := time.Now()
 		duration := endedAt.Sub(startedAt)
 

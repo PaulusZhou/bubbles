@@ -15,7 +15,6 @@ var (
 	createPrompt   string
 	createSchedule string
 	createRunAt    string
-	createWorkDir  string
 )
 
 var createCmd = &cobra.Command{
@@ -25,10 +24,7 @@ var createCmd = &cobra.Command{
   bubbles create --name "每日总结" --schedule "0 9 * * *" --prompt "总结今天的代码变更"
 
   # 创建一次性任务（指定时间执行，格式：YYYY-MM-DDTHH:MM:SS）
-  bubbles create --name "代码审查" --at "2026-06-13T14:59:00" --prompt "运行代码审查"
-
-  # 指定工作目录
-  bubbles create --name "测试" --schedule "*/5 * * * *" --prompt "运行测试" --dir /path/to/project`,
+  bubbles create --name "代码审查" --at "2026-06-13T14:59:00" --prompt "运行代码审查"`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if createPrompt == "" {
 			return fmt.Errorf("--prompt 是必填参数")
@@ -43,7 +39,6 @@ var createCmd = &cobra.Command{
 			Prompt:   createPrompt,
 			Schedule: createSchedule,
 			RunAt:    createRunAt,
-			WorkDir:  createWorkDir,
 		})
 		if err != nil {
 			return err
@@ -75,7 +70,6 @@ func init() {
 	createCmd.Flags().StringVarP(&createPrompt, "prompt", "p", "", "发送给 Claude Code 的 prompt（必填）")
 	createCmd.Flags().StringVarP(&createSchedule, "schedule", "s", "", "cron 表达式（如 '0 9 * * *'）")
 	createCmd.Flags().StringVarP(&createRunAt, "at", "a", "", "一次性任务执行时间（格式：YYYY-MM-DDTHH:MM:SS，如 '2026-06-13T14:59:00'）")
-	createCmd.Flags().StringVarP(&createWorkDir, "dir", "d", "", "Claude Code 的工作目录")
 
 	_ = createCmd.MarkFlagRequired("prompt")
 }
