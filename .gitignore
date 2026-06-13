@@ -5,6 +5,7 @@ vendor/
 # Build outputs
 dist/
 build/
+bin/
 *.log
 
 # Environment
@@ -20,3 +21,11 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+
+# Go
+*.exe
+*.test
+*.out
+
+# Bubbles data
+.bubbles/
