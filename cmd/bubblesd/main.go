@@ -97,6 +97,17 @@ func main() {
 				})
 				return sendErr
 			})
+
+			// 注册 /cron-new 命令：发送创建任务的表单卡片
+			fch.RegisterCommand("/cron-new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				cardJSON := feishu.BuildNewTaskCardJSON()
+				_, sendErr := ch.Send(ctx, &types.SendInput{
+					ChatID:         msg.ChatID,
+					Card:           cardJSON,
+					ReplyMessageID: msg.MessageID,
+				})
+				return sendErr
+			})
 			feishuStart := time.Now()
 			if err := fch.Start(context.Background()); err != nil {
 				slog.Error("failed to start feishu channel",

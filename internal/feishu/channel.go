@@ -2,12 +2,9 @@ package feishu
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/slog"
 	"strings"
-	"sync"
-	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/larksuite/oapi-sdk-go/v3/channel"
@@ -76,7 +73,7 @@ func (f *FeishuChannel) SetScheduler(scheduler *daemon.Scheduler) {
 	f.scheduler = scheduler
 }
 
-// NotifyTaskCompletion sends a task completion notification to Feishu.
+// NotifyTaskCompletion sends a task completion notification to Feishu as a v2 card.
 // Implements daemon.FeishuNotifier.
 func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion daemon.TaskCompletion) error {
 	if f.defaultChatID == "" {
@@ -87,62 +84,22 @@ func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion dae
 		return nil
 	}
 
-	taskName := completion.TaskName
-	if taskName == "" {
-		taskName = completion.TaskID
-	}
+	cardJSON := BuildTaskCompletionCard(completion)
 
-	statusEmoji := "✅"
-	statusText := "成功"
-	if completion.Status == "failed" {
-		statusEmoji = "❌"
-		statusText = "失败"
-	}
-
-	duration := completion.Duration.Round(time.Second)
-	startTime := completion.StartedAt.Format("15:04:05")
-	endTime := completion.EndedAt.Format("15:04:05")
-
-	header := fmt.Sprintf("%s **任务完成: %s**\n📋 Task ID: `%s`\n📊 状态: %s %s\n⏱️ 耗时: %s\n🕐 开始: %s | 结束: %s\n",
-		statusEmoji,
-		taskName,
-		completion.TaskID,
-		statusEmoji,
-		statusText,
-		duration,
-		startTime,
-		endTime,
-	)
-
-	// Truncate output if too long for a single message
-	output := completion.Output
-	maxOutput := 3000
-	if len(output) > maxOutput {
-		output = output[:maxOutput] + "\n\n... (输出被截断)"
-	}
-
-	// Wrap in a code block for readability
-	content := header + "\n```\n" + output + "\n```"
-
-	chunks := splitMessage(content, 3500)
-	for i, chunk := range chunks {
-		_, err := f.ch.Send(ctx, &types.SendInput{
-			ChatID: f.defaultChatID,
-			Markdown: chunk,
-		})
-		if err != nil {
-			slog.Error("feishu: failed to send task completion notification",
-				"task_id", completion.TaskID,
-				"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
-				"error", err,
-			)
-			return err
-		}
-		slog.Info("feishu: task completion notification sent",
+	_, err := f.ch.Send(ctx, &types.SendInput{
+		ChatID: f.defaultChatID,
+		Card:   cardJSON,
+	})
+	if err != nil {
+		slog.Error("feishu: failed to send task completion notification",
 			"task_id", completion.TaskID,
-			"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
+			"error", err,
 		)
+		return err
 	}
+	slog.Info("feishu: task completion notification sent",
+		"task_id", completion.TaskID,
+	)
 	return nil
 }
 
@@ -323,9 +280,19 @@ func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardA
 		"task_id", taskID,
 		"chat_id", event.ChatID,
 		"operator", event.Operator.OpenID,
+		"form_value", fmt.Sprintf("%v", event.Action.FormValue),
 	)
 
-	if taskID == "" || action == "" {
+	if action == "" {
+		return nil
+	}
+
+	// Handle create_task form submission (no taskID required)
+	if action == "create_task" {
+		return f.handleCreateTaskAction(ctx, event)
+	}
+
+	if taskID == "" {
 		return nil
 	}
 
@@ -368,265 +335,114 @@ func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardA
 	return nil
 }
 
-
-// taskButtonRow creates a v2 card column_set with action buttons.
-// v2 cards don't support the "action" tag; buttons must be inside column_set -> column.
-func taskButtonRow(buttons ...map[string]interface{}) map[string]interface{} {
-	columns := make([]map[string]interface{}, len(buttons))
-	for i, btn := range buttons {
-		columns[i] = map[string]interface{}{
-			"tag":    "column",
-			"width":  "auto",
-			"elements": []map[string]interface{}{btn},
-		}
+// parseFormString extracts a string from form value (handles string and []interface{}).
+func parseFormString(fv map[string]interface{}, key string) string {
+	v, ok := fv[key]
+	if !ok {
+		return ""
 	}
-	return map[string]interface{}{
-		"tag":     "column_set",
-		"columns": columns,
+	// multi_select returns []interface{}, single value returns string
+	if arr, ok := v.([]interface{}); ok && len(arr) > 0 {
+		s, _ := arr[0].(string)
+		return s
+	}
+	s, _ := v.(string)
+	return s
+}
+
+// buildCronFromForm generates a cron expression from form dropdown values.
+// dayValue prefixes: "w0"-"w6" for weekday, "d1"-"d28" for month day.
+func buildCronFromForm(freqType, dayValue, hourValue string) string {
+	hour := hourValue
+	if hour == "" {
+		hour = "9"
+	}
+
+	switch freqType {
+	case "weekdays":
+		return fmt.Sprintf("0 %s * * 1-5", hour)
+	case "weekly":
+		day := strings.TrimPrefix(dayValue, "w")
+		if day == "" {
+			day = "1"
+		}
+		return fmt.Sprintf("0 %s * * %s", hour, day)
+	case "monthly":
+		day := strings.TrimPrefix(dayValue, "d")
+		if day == "" {
+			day = "1"
+		}
+		return fmt.Sprintf("0 %s %s * *", hour, day)
+	default: // daily
+		return fmt.Sprintf("0 %s * * *", hour)
 	}
 }
 
-// taskButton creates a v2 card button with value for SDK callback compatibility.
-func taskButton(text, buttonType, action, taskID string) map[string]interface{} {
-	value := map[string]string{"action": action, "task_id": taskID}
-	return map[string]interface{}{
-		"tag":  "button",
-		"text": map[string]string{"tag": "plain_text", "content": text},
-		"type": buttonType,
-		"value":     value,
-		"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+// handleCreateTaskAction processes the /cron-new form submission.
+func (f *FeishuChannel) handleCreateTaskAction(ctx context.Context, event *types.CardActionEvent) error {
+	fv := event.Action.FormValue
+
+	prompt, _ := fv["prompt"].(string)
+	freqType := parseFormString(fv, "freq_type")
+	dayValue := parseFormString(fv, "day_value")
+	hourValue := parseFormString(fv, "hour_value")
+
+	if prompt == "" {
+		_, _ = f.ch.Send(ctx, &types.SendInput{ChatID: event.ChatID, Text: "❌ 任务描述不能为空"})
+		return nil
 	}
+
+	cronExpr := buildCronFromForm(freqType, dayValue, hourValue)
+
+	slog.Info("feishu: creating task from form",
+		"freq_type", freqType,
+		"day_value", dayValue,
+		"hour_value", hourValue,
+		"cron_expr", cronExpr,
+		"prompt", prompt,
+		"chat_id", event.ChatID,
+	)
+
+	claudePrompt := buildCreateTaskPrompt("", cronExpr, prompt)
+
+	// Run Claude asynchronously so we can return immediately (Feishu card action has ~5s timeout)
+	go f.runCreateTaskStream(event.ChatID, claudePrompt)
+
+	return nil
 }
 
-// BuildTaskCardJSON builds a Feishu v2 interactive card from a list of task summaries.
-// Each task row has action buttons appropriate to its type (cron vs one-time).
-func BuildTaskCardJSON(summaries []daemon.TaskSummary) (string, error) {
-	if len(summaries) == 0 {
-		card := map[string]interface{}{
-			"schema": "2.0",
-			"header": map[string]interface{}{
-				"template": "blue",
-				"title":    map[string]interface{}{"tag": "plain_text", "content": "📋 任务列表"},
-			},
-			"body": map[string]interface{}{
-				"elements": []map[string]interface{}{
-					{"tag": "markdown", "content": "当前没有活跃任务"},
-				},
-			},
-		}
-		bs, err := json.Marshal(card)
-		return string(bs), err
-	}
+// runCreateTaskStream executes Claude in the background and streams results via card update.
+func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
+	ctx := context.Background()
 
-	var cronTasks, oneTimeTasks []daemon.TaskSummary
-	for _, t := range summaries {
-		if t.Schedule != "" {
-			cronTasks = append(cronTasks, t)
-		} else {
-			oneTimeTasks = append(oneTimeTasks, t)
-		}
-	}
-
-	var elements []map[string]interface{}
-
-	if len(cronTasks) > 0 {
-		elements = append(elements, map[string]interface{}{
-			"tag": "markdown", "content": "⏰ **定时任务**",
-		})
-		for _, t := range cronTasks {
-			nextRun := t.NextRunAt
-			if nextRun == "" {
-				nextRun = "-"
-			}
-			row := fmt.Sprintf("**%s**\nCron: `%s` | 下次执行: %s | 状态: %s",
-				t.Name, t.Schedule, nextRun, t.Status)
-			if t.Prompt != "" {
-				desc := t.Prompt
-				if len([]rune(desc)) > 100 {
-					desc = string([]rune(desc)[:100]) + "…"
-				}
-				row += fmt.Sprintf("\n> %s", desc)
-			}
-			elements = append(elements, map[string]interface{}{"tag": "markdown", "content": row})
-
-			if t.Status == "paused" {
-				elements = append(elements, taskButtonRow(
-					taskButton("▶ 恢复", "primary", "resume", t.ID),
-					taskButton("🗑 删除", "danger", "delete", t.ID),
-				))
-			} else {
-				elements = append(elements, taskButtonRow(
-					taskButton("⏸ 暂停", "danger", "pause", t.ID),
-					taskButton("🗑 删除", "danger", "delete", t.ID),
-				))
-			}
-		}
-	}
-
-	if len(oneTimeTasks) > 0 {
-		elements = append(elements, map[string]interface{}{
-			"tag": "markdown", "content": "📌 **一次性任务**",
-		})
-		for _, t := range oneTimeTasks {
-			runAt := t.RunAt
-			if runAt == "" {
-				runAt = "-"
-			}
-			row := fmt.Sprintf("**%s**\n计划时间: %s | 状态: %s", t.Name, runAt, t.Status)
-			if t.Prompt != "" {
-				desc := t.Prompt
-				if len([]rune(desc)) > 100 {
-					desc = string([]rune(desc)[:100]) + "…"
-				}
-				row += fmt.Sprintf("\n> %s", desc)
-			}
-			elements = append(elements, map[string]interface{}{"tag": "markdown", "content": row})
-			elements = append(elements, taskButtonRow(
-				taskButton("🗑 删除", "danger", "delete", t.ID),
-			))
-		}
-	}
-
-	card := map[string]interface{}{
-		"schema": "2.0",
-		"header": map[string]interface{}{
-			"template": "blue",
-			"title":    map[string]interface{}{"tag": "plain_text", "content": fmt.Sprintf("📋 任务列表 (%d)", len(summaries))},
-		},
-		"body": map[string]interface{}{
-			"elements": elements,
-		},
-	}
-
-	bs, err := json.Marshal(card)
+	state := newCardState()
+	streamCtrl, err := f.ch.Stream(ctx, &types.SendInput{
+		ChatID: chatID,
+		Card:   state.BuildCard(),
+	})
 	if err != nil {
-		return "", err
-	}
-	return string(bs), nil
-}
-
-// cardState accumulates thinking and final text for a card stream.
-type cardState struct {
-	mu        sync.Mutex
-	thinking  strings.Builder
-	finalText strings.Builder
-	gotResult bool
-}
-
-const cardThinkingMaxLen = 8000
-
-func newCardState() *cardState {
-	return &cardState{}
-}
-
-func (s *cardState) AppendThinking(text string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.thinking.WriteString(text)
-}
-
-func (s *cardState) SetFinal(text string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.gotResult = true
-	s.finalText.WriteString(text)
-}
-
-// thinkingTruncated returns truncated thinking content with ellipsis if too long.
-func (s *cardState) thinkingTruncated() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	text := s.thinking.String()
-	if len(text) <= cardThinkingMaxLen {
-		return text
-	}
-	return text[:cardThinkingMaxLen] + "\n\n... (省略)"
-}
-
-func (s *cardState) finalContent() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.finalText.String()
-}
-
-func (s *cardState) BuildCard() string {
-	s.mu.Lock()
-	hasFinal := s.finalText.Len() > 0
-	s.mu.Unlock()
-
-	thinking := s.thinkingTruncated()
-	final := s.finalContent()
-
-	headerTitle := "🤖 Claude Code"
-	if hasFinal {
-		headerTitle = "✅ Claude Code"
+		slog.Error("feishu: failed to start card stream for create task", "error", err)
+		return
 	}
 
-	// Build v2 card JSON with markdown tag for proper rendering
-	elements := []map[string]interface{}{
-		{
-			"tag":     "markdown",
-			"content": "💭 **思考过程**\n\n" + thinking,
-		},
-	}
-
-	if hasFinal {
-		elements = append(elements,
-			map[string]interface{}{"tag": "hr"},
-			map[string]interface{}{
-				"tag":     "markdown",
-				"content": "📝 **最终回复**\n\n" + final,
-			},
-		)
-	}
-
-	card := map[string]interface{}{
-		"schema": "2.0",
-		"header": map[string]interface{}{
-			"template": "blue",
-			"title": map[string]interface{}{
-				"tag":     "plain_text",
-				"content": headerTitle,
-			},
-		},
-		"body": map[string]interface{}{
-			"elements": elements,
-		},
-	}
-
-	bs, _ := json.Marshal(card)
-	result := string(bs)
-
-	slog.Debug("feishu: card JSON", "card", result)
-	if len(result) > 2000 {
-		slog.Info("feishu: card JSON truncated", "preview", result[:2000])
-	} else {
-		slog.Info("feishu: card JSON", "card", result)
-	}
-	return result
-}
-
-// splitMessage splits a long string into chunks of at most maxLen characters,
-// trying to break at newlines.
-func splitMessage(s string, maxLen int) []string {
-	if len(s) <= maxLen {
-		return []string{s}
-	}
-
-	var chunks []string
-	for len(s) > maxLen {
-		// Try to find a newline near the limit
-		breakIdx := strings.LastIndex(s[:maxLen], "\n")
-		if breakIdx == -1 || breakIdx < maxLen/2 {
-			breakIdx = maxLen
+	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, claudePrompt, f.cfg.WorkDir, func(event agent.StreamEvent) error {
+		switch event.Type {
+		case "thinking":
+			state.AppendThinking(event.Text)
+		case "result":
+			state.SetFinal(event.Text)
 		}
-		chunks = append(chunks, s[:breakIdx])
-		s = s[breakIdx:]
-		// Skip leading newline on next chunk
-		s = strings.TrimPrefix(s, "\n")
+		return streamCtrl.UpdateCard(ctx, state.BuildCard())
+	})
+
+	streamCtrl.Close(ctx)
+
+	if err != nil {
+		slog.Error("feishu: claude stream failed for create task", "chat_id", chatID, "error", err)
+		return
 	}
-	if s != "" {
-		chunks = append(chunks, s)
-	}
-	return chunks
+
+	slog.Info("feishu: create task stream completed", "chat_id", chatID)
 }
+
+
