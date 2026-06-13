@@ -23,15 +23,33 @@ type FeishuStopper interface {
 	Stop(ctx context.Context) error
 }
 
+// TaskCompletion contains all information about a completed task execution.
+type TaskCompletion struct {
+	TaskID    string
+	TaskName  string
+	ExecID    string
+	Status    string // "success" or "failed"
+	Output    string
+	Duration  time.Duration
+	StartedAt time.Time
+	EndedAt   time.Time
+}
+
+// FeishuNotifier is an interface for sending task completion notifications to Feishu.
+type FeishuNotifier interface {
+	NotifyTaskCompletion(ctx context.Context, completion TaskCompletion) error
+}
+
 // Scheduler manages cron jobs and one-time tasks.
 type Scheduler struct {
-	cron          *cron.Cron
-	store         *store.Store
-	executor      *Executor
-	ipc           *ipc.Server
-	started       time.Time
-	entryMap      map[string]cron.EntryID // taskID -> cron entry ID
-	feishuStopper FeishuStopper
+	cron            *cron.Cron
+	store           *store.Store
+	executor        *Executor
+	ipc             *ipc.Server
+	started         time.Time
+	entryMap        map[string]cron.EntryID // taskID -> cron entry ID
+	feishuStopper   FeishuStopper
+	feishuNotifier  FeishuNotifier
 }
 
 func NewScheduler(s *store.Store) *Scheduler {
@@ -47,6 +65,13 @@ func NewScheduler(s *store.Store) *Scheduler {
 func (s *Scheduler) SetFeishuStopper(stopper FeishuStopper) {
 	s.feishuStopper = stopper
 	slog.Info("scheduler: feishu stopper registered")
+}
+
+// SetFeishuNotifier sets the notifier for task completion events.
+func (s *Scheduler) SetFeishuNotifier(notifier FeishuNotifier) {
+	s.feishuNotifier = notifier
+	s.executor.SetFeishuNotifier(notifier)
+	slog.Info("scheduler: feishu notifier registered")
 }
 
 // Run starts the scheduler and IPC server, blocks until shutdown.
@@ -210,6 +235,19 @@ func (s *Scheduler) checkOneTimeTasks() {
 					"scheduled_at", t.RunAt,
 					"delay", now.Sub(t.RunAt).Round(time.Second),
 				)
+				// Mark as done BEFORE dispatching to prevent re-triggering on next tick.
+				// The executor goroutine will still run to completion regardless.
+				if err := s.store.UpdateTaskStatus(t.ID, "done"); err != nil {
+					slog.Error("scheduler: failed to mark one-time task as done",
+						"task_id", t.ID,
+						"error", err,
+					)
+					// Continue anyway — the task will be cleaned up on next cycle
+				} else {
+					slog.Info("scheduler: one-time task marked as done (prevent re-trigger)",
+						"task_id", t.ID,
+					)
+				}
 				if err := s.executor.Run(t.ID); err != nil {
 					slog.Error("scheduler: one-time task execution dispatch failed",
 						"task_id", t.ID,
@@ -282,10 +320,15 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 	}
 
 	if p.RunAt != "" {
-		runAt, err := time.Parse(time.RFC3339, p.RunAt)
+		// 支持两种格式：YYYY-MM-DDTHH:MM:SS（本地时间）和 RFC3339（带时区）
+		runAt, err := time.ParseInLocation("2006-01-02T15:04:05", p.RunAt, time.Local)
 		if err != nil {
-			slog.Error("ipc: task.create invalid run_at", "run_at", p.RunAt, "error", err)
-			return nil, fmt.Errorf("invalid run_at format, use RFC3339: %w", err)
+			// 尝试 RFC3339 格式
+			runAt, err = time.Parse(time.RFC3339, p.RunAt)
+			if err != nil {
+				slog.Error("ipc: task.create invalid run_at", "run_at", p.RunAt, "error", err)
+				return nil, fmt.Errorf("invalid run_at format, use YYYY-MM-DDTHH:MM:SS (e.g. '2026-06-13T14:59:00'): %w", err)
+			}
 		}
 		task.RunAt = runAt
 		task.NextRunAt = runAt

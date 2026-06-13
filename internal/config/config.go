@@ -14,6 +14,7 @@ import (
 type Config struct {
 	FeishuAppID     string `yaml:"feishu_app_id"`
 	FeishuAppSecret string `yaml:"feishu_app_secret"`
+	FeishuChatID    string `yaml:"feishu_chat_id"`
 	ClaudePath      string `yaml:"claude_path"`
 	DataDir         string `yaml:"data_dir"`
 }

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/larksuite/oapi-sdk-go/v3/channel"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/pauluszhou/bubbles/internal/agent"
 	"github.com/pauluszhou/bubbles/internal/config"
+	"github.com/pauluszhou/bubbles/internal/daemon"
 )
 
 // CommandHandler handles a Feishu slash command.
@@ -22,9 +24,10 @@ type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.Norma
 
 // FeishuChannel wraps the SDK Channel and manages the Feishu bot lifecycle.
 type FeishuChannel struct {
-	ch       types.Channel
-	cfg      *config.Config
-	commands map[string]CommandHandler // prefix -> handler
+	ch        types.Channel
+	cfg       *config.Config
+	commands  map[string]CommandHandler // prefix -> handler
+	defaultChatID string
 }
 
 // New creates a FeishuChannel from the given config.
@@ -51,9 +54,10 @@ func New(cfg *config.Config) *FeishuChannel {
 	slog.Info("feishu channel instance created")
 
 	return &FeishuChannel{
-		ch:       ch,
-		cfg:      cfg,
-		commands: make(map[string]CommandHandler),
+		ch:             ch,
+		cfg:            cfg,
+		commands:       make(map[string]CommandHandler),
+		defaultChatID:   cfg.FeishuChatID,
 	}
 }
 
@@ -61,6 +65,76 @@ func New(cfg *config.Config) *FeishuChannel {
 func (f *FeishuChannel) RegisterCommand(prefix string, handler CommandHandler) {
 	f.commands[prefix] = handler
 	slog.Info("feishu: command registered", "prefix", prefix)
+}
+
+// NotifyTaskCompletion sends a task completion notification to Feishu.
+// Implements daemon.FeishuNotifier.
+func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion daemon.TaskCompletion) error {
+	if f.defaultChatID == "" {
+		slog.Debug("feishu: no default chat_id configured, skipping notification",
+			"task_id", completion.TaskID,
+			"task_name", completion.TaskName,
+		)
+		return nil
+	}
+
+	taskName := completion.TaskName
+	if taskName == "" {
+		taskName = completion.TaskID
+	}
+
+	statusEmoji := "✅"
+	statusText := "成功"
+	if completion.Status == "failed" {
+		statusEmoji = "❌"
+		statusText = "失败"
+	}
+
+	duration := completion.Duration.Round(time.Second)
+	startTime := completion.StartedAt.Format("15:04:05")
+	endTime := completion.EndedAt.Format("15:04:05")
+
+	header := fmt.Sprintf("%s **任务完成: %s**\n📋 Task ID: `%s`\n📊 状态: %s %s\n⏱️ 耗时: %s\n🕐 开始: %s | 结束: %s\n",
+		statusEmoji,
+		taskName,
+		completion.TaskID,
+		statusEmoji,
+		statusText,
+		duration,
+		startTime,
+		endTime,
+	)
+
+	// Truncate output if too long for a single message
+	output := completion.Output
+	maxOutput := 3000
+	if len(output) > maxOutput {
+		output = output[:maxOutput] + "\n\n... (输出被截断)"
+	}
+
+	// Wrap in a code block for readability
+	content := header + "\n```\n" + output + "\n```"
+
+	chunks := splitMessage(content, 3500)
+	for i, chunk := range chunks {
+		_, err := f.ch.Send(ctx, &types.SendInput{
+			ChatID: f.defaultChatID,
+			Markdown: chunk,
+		})
+		if err != nil {
+			slog.Error("feishu: failed to send task completion notification",
+				"task_id", completion.TaskID,
+				"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
+				"error", err,
+			)
+			return err
+		}
+		slog.Info("feishu: task completion notification sent",
+			"task_id", completion.TaskID,
+			"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
+		)
+	}
+	return nil
 }
 
 // Start registers event handlers and starts the WebSocket connection.

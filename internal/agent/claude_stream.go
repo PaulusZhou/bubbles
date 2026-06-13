@@ -199,13 +199,12 @@ func ClaudeStream(ctx context.Context, claudePath, prompt, workDir string, cb St
 					if block.Input != nil {
 						_ = json.Unmarshal(block.Input, &input)
 					}
-					toolText := fmt.Sprintf("\n🔧 **调用工具: %s**\n", block.Name)
+					toolDesc := block.Name
 					if input != nil {
-						toolText += formatToolInput(block.Name, input)
+						toolDesc = fmt.Sprintf("%s(%v)", block.Name, input)
 					}
-					toolText += "\n"
-					sendAndFlush(toolText)
-					slog.Info("claude stream: tool_use", "tool", block.Name, "call_id", block.ID)
+					slog.Info("claude stream: tool_use", "tool", toolDesc, "call_id", block.ID)
+					// Tool calls are logged locally only, not sent to Feishu
 				}
 			}
 
@@ -217,8 +216,8 @@ func ClaudeStream(ctx context.Context, claudePath, prompt, workDir string, cb St
 			for _, block := range content.Content {
 				if block.Type == "tool_result" {
 					resultText := formatToolResult(block.Content)
-					sendAndFlush(resultText)
-					slog.Info("claude stream: tool_result", "call_id", block.ToolUseID, "raw_bytes", len(block.Content))
+					slog.Info("claude stream: tool_result", "call_id", block.ToolUseID, "raw_bytes", len(block.Content), "result", resultText)
+					// Tool results are logged locally only, not sent to Feishu
 				}
 			}
 

@@ -24,8 +24,8 @@ var createCmd = &cobra.Command{
 	Example: `  # 创建 cron 定时任务（每天 9 点执行）
   bubbles create --name "每日总结" --schedule "0 9 * * *" --prompt "总结今天的代码变更"
 
-  # 创建一次性任务（指定时间执行）
-  bubbles create --name "代码审查" --at "2026-06-13T20:00:00" --prompt "运行代码审查"
+  # 创建一次性任务（指定时间执行，格式：YYYY-MM-DDTHH:MM:SS）
+  bubbles create --name "代码审查" --at "2026-06-13T14:59:00" --prompt "运行代码审查"
 
   # 指定工作目录
   bubbles create --name "测试" --schedule "*/5 * * * *" --prompt "运行测试" --dir /path/to/project`,
@@ -74,7 +74,7 @@ func init() {
 	createCmd.Flags().StringVarP(&createName, "name", "n", "", "任务名称")
 	createCmd.Flags().StringVarP(&createPrompt, "prompt", "p", "", "发送给 Claude Code 的 prompt（必填）")
 	createCmd.Flags().StringVarP(&createSchedule, "schedule", "s", "", "cron 表达式（如 '0 9 * * *'）")
-	createCmd.Flags().StringVarP(&createRunAt, "at", "a", "", "一次性任务执行时间（RFC3339 格式，如 '2026-06-13T20:00:00'）")
+	createCmd.Flags().StringVarP(&createRunAt, "at", "a", "", "一次性任务执行时间（格式：YYYY-MM-DDTHH:MM:SS，如 '2026-06-13T14:59:00'）")
 	createCmd.Flags().StringVarP(&createWorkDir, "dir", "d", "", "Claude Code 的工作目录")
 
 	_ = createCmd.MarkFlagRequired("prompt")

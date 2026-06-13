@@ -64,6 +64,8 @@ bubbles/
 │   │   └── migrations.go # 建表迁移
 │   └── model/             # 数据模型
 │       └── task.go        # Task, ExecutionLog 等
+├── docs/
+│   └── specs/             # 架构设计文档
 ├── go.mod
 ├── go.sum
 ├── Makefile
@@ -158,18 +160,6 @@ output, err := cmd.CombinedOutput()
 ```
 
 使用 `claude --print` 非交互模式，`--output-format json` 获取结构化输出。
-
-## 实现步骤
-
-1. 初始化 Go module，添加依赖 (cobra, robfig/cron, mattn/go-sqlite3)
-2. 实现 `internal/model/` — Task 和 ExecutionLog 数据模型
-3. 实现 `internal/store/` — SQLite 存储和建表
-4. 实现 `internal/ipc/` — Unix Socket 通信协议
-5. 实现 `internal/daemon/` — Daemon 核心（进程管理、调度器、执行器）
-6. 实现 `internal/cli/` — 所有 CLI 子命令
-7. 实现 `cmd/bubbles/main.go` 和 `cmd/bubblesd/main.go` — 入口
-8. 编写 Makefile (build/install/清理)
-9. 编写 README
 
 ## 验证方式
 

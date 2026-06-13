@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"time"
@@ -13,11 +14,17 @@ import (
 
 // Executor runs a task by invoking the agent.
 type Executor struct {
-	store *store.Store
+	store           *store.Store
+	feishuNotifier  FeishuNotifier
 }
 
 func NewExecutor(s *store.Store) *Executor {
 	return &Executor{store: s}
+}
+
+// SetFeishuNotifier sets the notifier for task completion events.
+func (e *Executor) SetFeishuNotifier(notifier FeishuNotifier) {
+	e.feishuNotifier = notifier
 }
 
 func (e *Executor) Run(taskID string) error {
@@ -108,16 +115,8 @@ func (e *Executor) Run(taskID string) error {
 			)
 		}
 
-		if task.Schedule == "" {
-			if err := e.store.UpdateTaskStatus(taskID, "done"); err != nil {
-				slog.Error("executor: failed to update one-time task status to done",
-					"task_id", taskID,
-					"error", err,
-				)
-			} else {
-				slog.Info("executor: one-time task marked as done", "task_id", taskID)
-			}
-		}
+		// Note: one-time task status is marked as "done" by the scheduler BEFORE
+		// dispatch to prevent re-triggering. Do not update it here.
 
 		slog.Info("executor: task execution completed",
 			"task_id", taskID,
@@ -125,6 +124,32 @@ func (e *Executor) Run(taskID string) error {
 			"status", status,
 			"duration", duration,
 		)
+
+		// Send Feishu notification if notifier is configured
+		if e.feishuNotifier != nil {
+			completion := TaskCompletion{
+				TaskID:    taskID,
+				TaskName:  task.Name,
+				ExecID:    execID,
+				Status:    status,
+				Output:    output,
+				Duration:  duration,
+				StartedAt: startedAt,
+				EndedAt:   endedAt,
+			}
+			if err := e.feishuNotifier.NotifyTaskCompletion(context.Background(), completion); err != nil {
+				slog.Error("executor: failed to send feishu notification",
+					"task_id", taskID,
+					"exec_id", execID,
+					"error", err,
+				)
+			} else {
+				slog.Info("executor: feishu notification sent",
+					"task_id", taskID,
+					"exec_id", execID,
+				)
+			}
+		}
 	}()
 
 	return nil

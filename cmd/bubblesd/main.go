@@ -89,6 +89,7 @@ func main() {
 					"duration", time.Since(feishuStart),
 				)
 				scheduler.SetFeishuStopper(fch)
+				scheduler.SetFeishuNotifier(fch)
 			}
 		} else {
 			slog.Warn("feishu channel creation failed despite app_id being set", "app_id", cfg.FeishuAppID)
