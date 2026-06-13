@@ -243,39 +243,15 @@ func BuildNewTaskCardJSON() string {
 							"max_length":  500,
 							"rows":        3,
 						},
-						// Submit / Cancel buttons
+						// Submit button
 						{
-							"tag": "column_set",
-							"columns": []map[string]interface{}{
-								{
-									"tag":   "column",
-									"width": "auto",
-									"elements": []map[string]interface{}{
-										{
-											"tag":              "button",
-											"text":             map[string]string{"tag": "plain_text", "content": "✅ 创建任务"},
-											"type":             "primary",
-											"form_action_type": "submit",
-											"name":             "submit_btn",
-											"value":            map[string]string{"action": "create_task"},
-											"behaviors":        []map[string]interface{}{{"type": "callback", "value": map[string]string{"action": "create_task"}}},
-										},
-									},
-								},
-								{
-									"tag":   "column",
-									"width": "auto",
-									"elements": []map[string]interface{}{
-										{
-											"tag":              "button",
-											"text":             map[string]string{"tag": "plain_text", "content": "取消"},
-											"type":             "default",
-											"form_action_type": "reset",
-											"name":             "cancel_btn",
-										},
-									},
-								},
-							},
+							"tag":   "button",
+							"text":  map[string]string{"tag": "plain_text", "content": "✅ 创建任务"},
+							"type":  "primary",
+							"form_action_type": "submit",
+							"name":       "submit_btn",
+							"value":      map[string]string{"action": "create_task"},
+							"behaviors":  []map[string]interface{}{{"type": "callback", "value": map[string]string{"action": "create_task"}}},
 						},
 					},
 				},
