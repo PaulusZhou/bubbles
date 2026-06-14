@@ -259,8 +259,8 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 		"message_id", msg.MessageID,
 	)
 
-	// 命令分发：检测注册的命令前缀
-	trimmed := strings.TrimSpace(msg.Content)
+	// 命令分发：去掉 mention 前缀后检测命令（群聊中 @机器人 会产生 @_user_1 等占位符）
+	trimmed := stripMentionPrefix(msg.Content)
 	for prefix, handler := range f.commands {
 		if trimmed == prefix || strings.HasPrefix(trimmed, prefix+" ") {
 			return handler(ctx, ch, msg)
@@ -446,6 +446,25 @@ func parseFormString(fv map[string]interface{}, key string) string {
 		return s
 	}
 	s, _ := v.(string)
+	return s
+}
+
+// stripMentionPrefix removes leading @_user_N mention placeholders from message content.
+// In Feishu group chats, @mentioning the bot produces content like "@_user_1 /new".
+func stripMentionPrefix(content string) string {
+	s := strings.TrimSpace(content)
+	for {
+		if !strings.HasPrefix(s, "@_user_") {
+			break
+		}
+		// find end of the @_user_N token
+		end := strings.IndexAny(s[6:], " \t\n")
+		if end == -1 {
+			// entire string is just the mention
+			return ""
+		}
+		s = strings.TrimSpace(s[6+end:])
+	}
 	return s
 }
 
