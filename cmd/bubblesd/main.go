@@ -151,6 +151,32 @@ func main() {
 				})
 				return sendErr
 			})
+
+			// 注册 /help 命令：显示所有支持的命令及使用说明
+			fch.RegisterCommand("/help", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				helpText := "📖 **Bubbles 命令帮助**\n\n" +
+					"以下是所有支持的命令：\n\n" +
+					"**会话管理**\n" +
+					"• /new [名称] — 创建新会话并切换到该会话。可选指定会话名称，如 /new 代码审查\n" +
+					"• /sessions — 查看所有会话列表，可切换或关闭会话\n" +
+					"• /stop — 停止当前会话正在进行的任务，保留会话以便继续\n\n" +
+					"**任务管理**\n" +
+					"• /cron — 查看所有定时任务列表，支持暂停、恢复、删除操作\n" +
+					"• /cron-new — 创建新的定时任务，通过表单设置频率和任务描述\n\n" +
+					"**其他**\n" +
+					"• /help — 显示此帮助信息\n\n" +
+					"---\n" +
+					"💡 **使用提示**\n" +
+					"• 直接发送消息即可与 Claude 对话\n" +
+					"• 群聊中需要 @机器人 才能触发命令\n" +
+					"• 会话空闲超过 60 分钟会自动清理"
+				_, sendErr := ch.Send(ctx, &types.SendInput{
+					ChatID:         msg.ChatID,
+					Markdown:       helpText,
+					ReplyMessageID: msg.MessageID,
+				})
+				return sendErr
+			})
 			feishuStart := time.Now()
 			if err := fch.Start(context.Background()); err != nil {
 				slog.Error("failed to start feishu channel",
