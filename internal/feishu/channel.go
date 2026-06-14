@@ -201,7 +201,7 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 		}())
 		switch event.Type {
 		case "thinking":
-			state.AppendThinking(event.Text)
+			state.SetThinking(event.Text)
 		case "result":
 			state.SetFinal(event.Text)
 		}
@@ -428,7 +428,7 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, claudePrompt, f.cfg.WorkDir, func(event agent.StreamEvent) error {
 		switch event.Type {
 		case "thinking":
-			state.AppendThinking(event.Text)
+			state.SetThinking(event.Text)
 		case "result":
 			state.SetFinal(event.Text)
 		}

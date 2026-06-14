@@ -292,9 +292,10 @@ func newCardState() *cardState {
 	return &cardState{}
 }
 
-func (s *cardState) AppendThinking(text string) {
+func (s *cardState) SetThinking(text string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.thinking.Reset()
 	s.thinking.WriteString(text)
 }
 
