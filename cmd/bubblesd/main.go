@@ -124,6 +124,23 @@ func main() {
 				return sendErr
 			})
 
+			// 注册 /stop 命令：停止当前活跃会话的 Claude 流，保留会话 ID 以便下次继续
+			fch.RegisterCommand("/stop", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				err := fch.StopActiveSession(msg.ChatID)
+				var reply string
+				if err != nil {
+					reply = fmt.Sprintf("⚠️ %v", err)
+				} else {
+					reply = "⏹ 已停止当前任务。下次发消息将自动继续会话。"
+				}
+				_, sendErr := ch.Send(ctx, &types.SendInput{
+					ChatID:         msg.ChatID,
+					Markdown:       reply,
+					ReplyMessageID: msg.MessageID,
+				})
+				return sendErr
+			})
+
 			// 注册 /cron-new 命令：发送创建任务的表单卡片
 			fch.RegisterCommand("/cron-new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 				cardJSON := feishu.BuildNewTaskCardJSON()

@@ -29,7 +29,8 @@ type ChatSession struct {
 	firstMessage string    // user's first message in this session (for display)
 	created      time.Time
 	lastActive   time.Time
-	sem          chan struct{} // capacity-1 semaphore to serialize messages within this session
+	sem          chan struct{}     // capacity-1 semaphore to serialize messages within this session
+	cancelFunc   context.CancelFunc // cancel the in-flight processMessage goroutine, nil when idle
 }
 
 // Name returns the display name of the session.
@@ -277,6 +278,27 @@ func (f *FeishuChannel) CloseSession(chatID, sessionKey string) error {
 	return nil
 }
 
+// StopActiveSession cancels the in-flight Claude stream for the active session.
+// The session and its claudeSID are preserved so the next message can --resume.
+func (f *FeishuChannel) StopActiveSession(chatID string) error {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if cs.activeKey == "" {
+		return fmt.Errorf("no active session")
+	}
+	s, ok := cs.sessions[cs.activeKey]
+	if !ok {
+		return fmt.Errorf("active session not found")
+	}
+	if s.cancelFunc == nil {
+		return fmt.Errorf("session is not running")
+	}
+	s.cancelFunc()
+	slog.Info("feishu: session stop requested", "chat_id", chatID, "session_key", s.key)
+	return nil
+}
+
 // GetSessions returns all sessions for a chat and the active key.
 func (f *FeishuChannel) GetSessions(chatID string) ([]*ChatSession, string) {
 	cs := f.getChatState(chatID)
@@ -352,6 +374,23 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 	chatID := msg.ChatID
 	cs := f.getChatState(chatID)
 
+	// Create a cancellable child context and register the cancel func on the session.
+	// /stop calls this to abort the in-flight Claude stream while preserving claudeSID.
+	streamCtx, streamCancel := context.WithCancel(ctx)
+	cs.mu.Lock()
+	if s, ok := cs.sessions[sessionKey]; ok {
+		s.cancelFunc = streamCancel
+	}
+	cs.mu.Unlock()
+	defer func() {
+		streamCancel() // release context resources
+		cs.mu.Lock()
+		if s, ok := cs.sessions[sessionKey]; ok {
+			s.cancelFunc = nil
+		}
+		cs.mu.Unlock()
+	}()
+
 	slog.Info("feishu: processing message",
 		"chat_id", chatID,
 		"session_key", sessionKey,
@@ -379,7 +418,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 
 	state := newCardState()
 
-	streamCtrl, err := ch.Stream(ctx, &types.SendInput{
+	streamCtrl, err := ch.Stream(streamCtx, &types.SendInput{
 		ChatID:         chatID,
 		ReplyMessageID: msg.MessageID,
 		Card:           state.BuildCard(),
@@ -389,7 +428,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 		return
 	}
 
-	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
+	err = agent.ClaudeStreamWithEvents(streamCtx, f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
 		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
 			if len(event.Text) > 150 {
 				return event.Text[:150]
@@ -417,12 +456,16 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 			}
 			cs.mu.Unlock()
 		}
-		return streamCtrl.UpdateCard(ctx, state.BuildCardWithName(sessionName))
+		return streamCtrl.UpdateCard(streamCtx, state.BuildCardWithName(sessionName))
 	})
 
-	streamCtrl.Close(ctx)
+	streamCtrl.Close(streamCtx)
 
 	if err != nil {
+		if streamCtx.Err() != nil {
+			slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
+			return
+		}
 		slog.Error("feishu: claude stream failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
 		return
 	}
