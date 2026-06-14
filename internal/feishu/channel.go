@@ -34,11 +34,11 @@ type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.Norma
 
 // FeishuChannel wraps the SDK Channel and manages the Feishu bot lifecycle.
 type FeishuChannel struct {
-	ch              types.Channel
-	cfg             *config.Config
-	commands        map[string]CommandHandler // prefix -> handler
-	defaultChatID    string
-	scheduler       *daemon.Scheduler // for direct task operations on card callbacks
+	ch            types.Channel
+	cfg           *config.Config
+	commands      map[string]CommandHandler // prefix -> handler
+	defaultChatID string
+	scheduler     *daemon.Scheduler // for direct task operations on card callbacks
 
 	sessions   map[string]*chatSession // chatID -> active Claude session
 	sessionsMu sync.Mutex
@@ -68,11 +68,11 @@ func New(cfg *config.Config) *FeishuChannel {
 	slog.Info("feishu channel instance created")
 
 	return &FeishuChannel{
-		ch:           ch,
-		cfg:          cfg,
-		commands:     make(map[string]CommandHandler),
+		ch:            ch,
+		cfg:           cfg,
+		commands:      make(map[string]CommandHandler),
 		defaultChatID: cfg.FeishuChatID,
-		sessions:     make(map[string]*chatSession),
+		sessions:      make(map[string]*chatSession),
 	}
 }
 
@@ -279,7 +279,7 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	streamCtrl, err := ch.Stream(ctx, &types.SendInput{
 		ChatID:         msg.ChatID,
 		ReplyMessageID: msg.MessageID,
-		Card:          state.BuildCard(),
+		Card:           state.BuildCard(),
 	})
 	if err != nil {
 		slog.Error("feishu: failed to start card stream", "chat_id", msg.ChatID, "error", err)
@@ -298,6 +298,8 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 			if event.SessionID != "" {
 				f.updateSession(msg.ChatID, event.SessionID)
 			}
+		// case "text":
+		// 	state.SetThinking(event.Text)
 		case "thinking":
 			state.SetThinking(event.Text)
 		case "result":
@@ -323,49 +325,6 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	}
 
 	slog.Info("feishu: card stream completed", "chat_id", msg.ChatID)
-	return nil
-}
-
-// fallbackSend sends Claude output as a single message when streaming fails.
-func fallbackSend(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, cfg *config.Config) error {
-	slog.Info("feishu: using fallback mode",
-		"chat_id", msg.ChatID,
-		"reply_to", msg.MessageID,
-	)
-
-	result := agent.ClaudeWithTimeout(msg.Content, cfg.WorkDir)
-	output := result.Output
-	if result.Error != nil {
-		slog.Error("feishu: claude execution failed in fallback mode",
-			"chat_id", msg.ChatID,
-			"error", result.Error,
-		)
-		output = fmt.Sprintf("%s\n❌ 执行出错: %v", output, result.Error)
-	}
-
-	// Split long output into chunks if needed (Feishu has a ~4000 char limit per message)
-	chunks := splitMessage(output, 3500)
-	for i, chunk := range chunks {
-		sendResult, err := ch.Send(ctx, &types.SendInput{
-			ChatID:         msg.ChatID,
-			Markdown:       chunk,
-			ReplyMessageID: msg.MessageID,
-		})
-		if err != nil {
-			slog.Error("feishu: failed to send fallback message",
-				"chat_id", msg.ChatID,
-				"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
-				"error", err,
-			)
-			return err
-		}
-		slog.Info("feishu: fallback message sent",
-			"chat_id", msg.ChatID,
-			"chunk", fmt.Sprintf("%d/%d", i+1, len(chunks)),
-			"message_id", sendResult.MessageID,
-		)
-	}
-
 	return nil
 }
 
@@ -531,7 +490,8 @@ func (f *FeishuChannel) handleCreateTaskAction(ctx context.Context, event *types
 
 // runCreateTaskStream executes Claude in the background and streams results via card update.
 func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
+	defer cancel()
 
 	state := newCardState()
 	streamCtrl, err := f.ch.Stream(ctx, &types.SendInput{
@@ -562,5 +522,3 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 
 	slog.Info("feishu: create task stream completed", "chat_id", chatID)
 }
-
-

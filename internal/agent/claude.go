@@ -15,10 +15,10 @@ type ClaudeResult struct {
 }
 
 // Claude executes a prompt via the claude CLI in non-interactive mode.
-func Claude(ctx context.Context, prompt string, workDir string) ClaudeResult {
+func Claude(ctx context.Context, claudePath, prompt, workDir string) ClaudeResult {
 	args := []string{"--print", "-p", prompt, "--dangerously-skip-permissions"}
 
-	cmd := exec.CommandContext(ctx, "claude", args...)
+	cmd := exec.CommandContext(ctx, claudePath, args...)
 	if workDir != "" {
 		cmd.Dir = workDir
 	}
@@ -44,8 +44,8 @@ func Claude(ctx context.Context, prompt string, workDir string) ClaudeResult {
 }
 
 // ClaudeWithTimeout executes a prompt with a default 30-minute timeout.
-func ClaudeWithTimeout(prompt string, workDir string) ClaudeResult {
+func ClaudeWithTimeout(claudePath, prompt, workDir string) ClaudeResult {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
-	return Claude(ctx, prompt, workDir)
+	return Claude(ctx, claudePath, prompt, workDir)
 }

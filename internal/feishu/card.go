@@ -210,28 +210,28 @@ func BuildNewTaskCardJSON() string {
 						// Frequency type
 						{"tag": "markdown", "content": "**执行频率**"},
 						{
-							"tag":           "select_static",
-							"name":          "freq_type",
-							"placeholder":   map[string]string{"tag": "plain_text", "content": "选择频率"},
-							"options":       freqOptions,
+							"tag":            "select_static",
+							"name":           "freq_type",
+							"placeholder":    map[string]string{"tag": "plain_text", "content": "选择频率"},
+							"options":        freqOptions,
 							"initial_option": "daily",
 						},
 						// Day selector (weekday or month day)
 						{"tag": "markdown", "content": "**执行日期**（每周选星期几，每月选几号）"},
 						{
-							"tag":            "multi_select_static",
-							"name":           "day_value",
-							"placeholder":    map[string]string{"tag": "plain_text", "content": "选择日期"},
-							"options":        append(weekdayOptions, monthDayOptions...),
+							"tag":             "multi_select_static",
+							"name":            "day_value",
+							"placeholder":     map[string]string{"tag": "plain_text", "content": "选择日期"},
+							"options":         append(weekdayOptions, monthDayOptions...),
 							"selected_values": []string{""},
 						},
 						// Hour selector
 						{"tag": "markdown", "content": "**执行时间**"},
 						{
-							"tag":            "multi_select_static",
-							"name":           "hour_value",
-							"placeholder":    map[string]string{"tag": "plain_text", "content": "选择时间"},
-							"options":        hourOptions,
+							"tag":             "multi_select_static",
+							"name":            "hour_value",
+							"placeholder":     map[string]string{"tag": "plain_text", "content": "选择时间"},
+							"options":         hourOptions,
 							"selected_values": []string{"9"},
 						},
 						// Task prompt
@@ -245,13 +245,13 @@ func BuildNewTaskCardJSON() string {
 						},
 						// Submit button
 						{
-							"tag":   "button",
-							"text":  map[string]string{"tag": "plain_text", "content": "✅ 创建任务"},
-							"type":  "primary",
+							"tag":              "button",
+							"text":             map[string]string{"tag": "plain_text", "content": "✅ 创建任务"},
+							"type":             "primary",
 							"form_action_type": "submit",
-							"name":       "submit_btn",
-							"value":      map[string]string{"action": "create_task"},
-							"behaviors":  []map[string]interface{}{{"type": "callback", "value": map[string]string{"action": "create_task"}}},
+							"name":             "submit_btn",
+							"value":            map[string]string{"action": "create_task"},
+							"behaviors":        []map[string]interface{}{{"type": "callback", "value": map[string]string{"action": "create_task"}}},
 						},
 					},
 				},
@@ -259,7 +259,11 @@ func BuildNewTaskCardJSON() string {
 		},
 	}
 
-	bs, _ := json.Marshal(card)
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal new task card", "error", err)
+		return "{}"
+	}
 	return string(bs)
 }
 
@@ -306,45 +310,37 @@ func (s *cardState) SetFinal(text string) {
 	s.finalText.WriteString(text)
 }
 
-// thinkingTruncated returns truncated thinking content with ellipsis if too long.
-func (s *cardState) thinkingTruncated() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	text := s.thinking.String()
-	if len(text) <= cardThinkingMaxLen {
-		return text
-	}
-	return text[:cardThinkingMaxLen] + "\n\n... (省略)"
-}
-
-func (s *cardState) finalContent() string {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.finalText.String()
-}
-
 func (s *cardState) BuildCard() string {
 	s.mu.Lock()
-	hasFinal := s.finalText.Len() > 0
-	s.mu.Unlock()
+	defer s.mu.Unlock()
 
-	thinking := s.thinkingTruncated()
-	final := s.finalContent()
+	thinking := s.thinking.String()
+	if len(thinking) > cardThinkingMaxLen {
+		thinking = thinking[:cardThinkingMaxLen] + "\n\n... (省略)"
+	}
+	final := s.finalText.String()
+	hasFinal := s.finalText.Len() > 0
 
 	headerTitle := "🤖 Claude Code"
 	if hasFinal {
 		headerTitle = "✅ Claude Code"
 	}
 
-	// Build v2 card JSON with markdown tag for proper rendering
-	elements := []map[string]interface{}{
-		{
-			"tag":     "markdown",
-			"content": "💭 **思考过程**\n\n" + thinking,
-		},
+	// 初始状态显示思考中提示
+	if !hasFinal && thinking == "" {
+		thinking = "开始执行任务，思考中..."
 	}
 
-	if hasFinal {
+	// Build v2 card JSON with markdown tag for proper rendering
+	var elements []map[string]interface{}
+	if thinking != "" {
+		elements = append(elements, map[string]interface{}{
+			"tag":     "markdown",
+			"content": "💭 **思考过程**\n\n" + thinking,
+		})
+	}
+
+	if hasFinal && final != "" {
 		elements = append(elements,
 			map[string]interface{}{"tag": "hr"},
 			map[string]interface{}{
@@ -368,7 +364,11 @@ func (s *cardState) BuildCard() string {
 		},
 	}
 
-	bs, _ := json.Marshal(card)
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal card", "error", err)
+		return "{}"
+	}
 	result := string(bs)
 
 	slog.Debug("feishu: card JSON", "card", result)
@@ -380,27 +380,36 @@ func (s *cardState) BuildCard() string {
 	return result
 }
 
-// splitMessage splits a long string into chunks of at most maxLen characters,
+// splitMessage splits a long string into chunks of at most maxLen runes,
 // trying to break at newlines.
 func splitMessage(s string, maxLen int) []string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return []string{s}
 	}
 
 	var chunks []string
-	for len(s) > maxLen {
+	for len(runes) > maxLen {
 		// Try to find a newline near the limit
-		breakIdx := strings.LastIndex(s[:maxLen], "\n")
-		if breakIdx == -1 || breakIdx < maxLen/2 {
+		breakIdx := -1
+		for i := maxLen - 1; i >= maxLen/2; i-- {
+			if runes[i] == '\n' {
+				breakIdx = i
+				break
+			}
+		}
+		if breakIdx == -1 {
 			breakIdx = maxLen
 		}
-		chunks = append(chunks, s[:breakIdx])
-		s = s[breakIdx:]
+		chunks = append(chunks, string(runes[:breakIdx]))
+		runes = runes[breakIdx:]
 		// Skip leading newline on next chunk
-		s = strings.TrimPrefix(s, "\n")
+		if len(runes) > 0 && runes[0] == '\n' {
+			runes = runes[1:]
+		}
 	}
-	if s != "" {
-		chunks = append(chunks, s)
+	if len(runes) > 0 {
+		chunks = append(chunks, string(runes))
 	}
 	return chunks
 }
@@ -427,11 +436,12 @@ func BuildTaskCompletionCard(c daemon.TaskCompletion) string {
 	startTime := c.StartedAt.Format("15:04:05")
 	endTime := c.EndedAt.Format("15:04:05")
 
-	// Truncate output if too long
+	// Truncate output if too long (using runes for proper UTF-8 handling)
 	output := c.Output
 	maxOutput := 3000
-	if len(output) > maxOutput {
-		output = output[:maxOutput] + "\n\n... (输出被截断)"
+	outputRunes := []rune(output)
+	if len(outputRunes) > maxOutput {
+		output = string(outputRunes[:maxOutput]) + "\n\n... (输出被截断)"
 	}
 
 	info := fmt.Sprintf("%s **任务完成: %s**\n"+
@@ -463,6 +473,10 @@ func BuildTaskCompletionCard(c daemon.TaskCompletion) string {
 		},
 	}
 
-	bs, _ := json.Marshal(card)
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal task completion card", "error", err)
+		return "{}"
+	}
 	return string(bs)
 }

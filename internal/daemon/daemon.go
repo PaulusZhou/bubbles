@@ -15,7 +15,6 @@ import (
 const (
 	DefaultSocketName = "bubblesd.sock"
 	DefaultPIDName    = "bubblesd.pid"
-	DefaultDBName     = "bubbles.db"
 )
 
 // DefaultDataDir returns the default data directory for bubbles.
@@ -30,10 +29,6 @@ func SocketPath() string {
 
 func PIDPath() string {
 	return filepath.Join(DefaultDataDir(), DefaultPIDName)
-}
-
-func DBPath() string {
-	return filepath.Join(DefaultDataDir(), DefaultDBName)
 }
 
 // IsRunning checks if the daemon is running by reading the PID file and signaling the process.

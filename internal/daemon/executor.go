@@ -17,11 +17,12 @@ import (
 type Executor struct {
 	store           *store.Store
 	feishuNotifier  FeishuNotifier
+	claudePath      string
 	workDir         string
 }
 
 func NewExecutor(s *store.Store, cfg *config.Config) *Executor {
-	return &Executor{store: s, workDir: cfg.WorkDir}
+	return &Executor{store: s, claudePath: cfg.ClaudePath, workDir: cfg.WorkDir}
 }
 
 // SetFeishuNotifier sets the notifier for task completion events.
@@ -77,7 +78,7 @@ func (e *Executor) Run(taskID string) error {
 			"work_dir", e.workDir,
 		)
 
-		result := agent.ClaudeWithTimeout(task.Prompt, e.workDir)
+		result := agent.ClaudeWithTimeout(e.claudePath, task.Prompt, e.workDir)
 		endedAt := time.Now()
 		duration := endedAt.Sub(startedAt)
 

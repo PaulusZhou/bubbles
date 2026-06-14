@@ -71,51 +71,6 @@ type claudeContentBlock struct {
 	Content   json.RawMessage `json:"content,omitempty"`
 }
 
-// formatToolResult formats a tool_result's raw content for Feishu display.
-// Long results are truncated with head + tail to keep messages readable.
-const toolResultMaxLen = 1500
-
-func formatToolResult(raw json.RawMessage) string {
-	rawLen := len(raw)
-	if rawLen == 0 {
-		return "✅ **工具结果** (empty)\n\n"
-	}
-
-	text := strings.TrimSpace(string(raw))
-
-	// Try to extract meaningful content from JSON-wrapped results
-	// Common patterns: {"type":"text","text":"..."} or plain text
-	if strings.HasPrefix(text, "{") {
-		var obj map[string]json.RawMessage
-		if json.Unmarshal(raw, &obj) == nil {
-			if t, ok := obj["text"]; ok {
-				var s string
-				if json.Unmarshal(t, &s) == nil {
-					text = s
-				}
-			} else if t, ok := obj["output"]; ok {
-				var s string
-				if json.Unmarshal(t, &s) == nil {
-					text = s
-				}
-			}
-		}
-	}
-
-	text = strings.TrimSpace(text)
-
-	if len(text) <= toolResultMaxLen {
-		return fmt.Sprintf("✅ **工具结果** (%d bytes)\n```\n%s\n```\n\n", rawLen, text)
-	}
-
-	// Show head + tail with truncation indicator
-	headLen := toolResultMaxLen / 2
-	tailLen := toolResultMaxLen / 2
-	head := text[:headLen]
-	tail := text[len(text)-tailLen:]
-	return fmt.Sprintf("✅ **工具结果** (%d bytes, 截断显示)\n```\n%s\n\n... 省略 %d 字符 ...\n\n%s\n```\n\n",
-		rawLen, head, len(text)-headLen-tailLen, tail)
-}
 func handleControlRequest(msg claudeSDKMessage, stdin io.Writer) {
 	var req claudeControlRequestPayload
 	if err := json.Unmarshal(msg.Request, &req); err != nil {
@@ -262,13 +217,17 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, re
 			callbackErr = err
 			mu.Unlock()
 			slog.Error("claude stream: event callback error", "type", event.Type, "error", err)
+			// Kill the Claude process on callback error to prevent resource leak
+			if cmd.Process != nil {
+				_ = cmd.Process.Kill()
+			}
 			return err
 		}
 		return nil
 	}
 
 	scanner := bufio.NewScanner(stdout)
-	scanner.Buffer(make([]byte, 0, 1024*1024), 10*1024*1024)
+	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024) // 初始 64KB，最大 10MB
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
-	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -61,6 +61,8 @@ type Scheduler struct {
 	cfg             *config.Config
 	started         time.Time
 	entryMap        map[string]cron.EntryID // taskID -> cron entry ID
+	entryMapMu      sync.RWMutex           // protects entryMap
+	quit            chan struct{}           // signals goroutines to stop
 	feishuStopper   FeishuStopper
 	feishuNotifier  FeishuNotifier
 }
@@ -72,6 +74,7 @@ func NewScheduler(s *store.Store, cfg *config.Config) *Scheduler {
 		executor: NewExecutor(s, cfg),
 		cfg:      cfg,
 		entryMap: make(map[string]cron.EntryID),
+		quit:     make(chan struct{}),
 	}
 }
 
@@ -146,6 +149,10 @@ func (s *Scheduler) Run() error {
 	slog.Info("scheduler: received shutdown signal", "signal", sig)
 
 	// 优雅关闭
+	slog.Info("scheduler: stopping one-time task checker...")
+	close(s.quit)
+	slog.Info("scheduler: one-time task checker signaled to stop")
+
 	slog.Info("scheduler: stopping cron scheduler...")
 	stopCtx := s.cron.Stop()
 	<-stopCtx.Done()
@@ -205,7 +212,9 @@ func (s *Scheduler) scheduleTask(t *model.Task) {
 		return
 	}
 
+	s.entryMapMu.Lock()
 	s.entryMap[t.ID] = entryID
+	s.entryMapMu.Unlock()
 
 	// 计算下次执行时间
 	sched, _ := cron.ParseStandard(schedule)
@@ -226,53 +235,59 @@ func (s *Scheduler) checkOneTimeTasks() {
 	ticker := time.NewTicker(10 * time.Second)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		tasks, err := s.store.ListActiveTasks()
-		if err != nil {
-			slog.Error("scheduler: one-time checker failed to list tasks", "error", err)
-			continue
-		}
-
-		now := time.Now()
-		for i := range tasks {
-			t := &tasks[i]
-			if t.Schedule != "" {
-				continue // 跳过 cron 任务
-			}
-			if t.RunAt.IsZero() {
+	for {
+		select {
+		case <-s.quit:
+			slog.Info("scheduler: one-time task checker stopped")
+			return
+		case <-ticker.C:
+			tasks, err := s.store.ListActiveTasks()
+			if err != nil {
+				slog.Error("scheduler: one-time checker failed to list tasks", "error", err)
 				continue
 			}
-			if now.After(t.RunAt) || now.Equal(t.RunAt) {
-				slog.Info("scheduler: one-time task triggered",
-					"task_id", t.ID,
-					"task_name", t.Name,
-					"scheduled_at", t.RunAt,
-					"delay", now.Sub(t.RunAt).Round(time.Second),
-				)
-				// Mark as done BEFORE dispatching to prevent re-triggering on next tick.
-				// The executor goroutine will still run to completion regardless.
-				if err := s.store.UpdateTaskStatus(t.ID, "done"); err != nil {
-					slog.Error("scheduler: failed to mark one-time task as done",
-						"task_id", t.ID,
-						"error", err,
-					)
-					// Continue anyway — the task will be cleaned up on next cycle
-				} else {
-					slog.Info("scheduler: one-time task marked as done (prevent re-trigger)",
-						"task_id", t.ID,
-					)
+
+			now := time.Now()
+			for i := range tasks {
+				t := &tasks[i]
+				if t.Schedule != "" {
+					continue // 跳过 cron 任务
 				}
-				if err := s.executor.Run(t.ID); err != nil {
-					slog.Error("scheduler: one-time task execution dispatch failed",
+				if t.RunAt.IsZero() {
+					continue
+				}
+				if now.After(t.RunAt) || now.Equal(t.RunAt) {
+					slog.Info("scheduler: one-time task triggered",
 						"task_id", t.ID,
 						"task_name", t.Name,
-						"error", err,
+						"scheduled_at", t.RunAt,
+						"delay", now.Sub(t.RunAt).Round(time.Second),
 					)
-				} else {
-					slog.Info("scheduler: one-time task execution dispatched",
-						"task_id", t.ID,
-						"task_name", t.Name,
-					)
+					// Mark as done BEFORE dispatching to prevent re-triggering on next tick.
+					// The executor goroutine will still run to completion regardless.
+					if err := s.store.UpdateTaskStatus(t.ID, "done"); err != nil {
+						slog.Error("scheduler: failed to mark one-time task as done",
+							"task_id", t.ID,
+							"error", err,
+						)
+						// Continue anyway — the task will be cleaned up on next cycle
+					} else {
+						slog.Info("scheduler: one-time task marked as done (prevent re-trigger)",
+							"task_id", t.ID,
+						)
+					}
+					if err := s.executor.Run(t.ID); err != nil {
+						slog.Error("scheduler: one-time task execution dispatch failed",
+							"task_id", t.ID,
+							"task_name", t.Name,
+							"error", err,
+						)
+					} else {
+						slog.Info("scheduler: one-time task execution dispatched",
+							"task_id", t.ID,
+							"task_name", t.Name,
+						)
+					}
 				}
 			}
 		}
@@ -281,6 +296,9 @@ func (s *Scheduler) checkOneTimeTasks() {
 
 // removeTask removes a task from the scheduler.
 func (s *Scheduler) removeTask(taskID string) {
+	s.entryMapMu.Lock()
+	defer s.entryMapMu.Unlock()
+
 	if entryID, ok := s.entryMap[taskID]; ok {
 		s.cron.Remove(entryID)
 		delete(s.entryMap, taskID)
@@ -637,56 +655,6 @@ func (s *Scheduler) DeleteTask(taskID string) error {
 	}
 	slog.Info("scheduler: task deleted", "task_id", taskID)
 	return nil
-}
-
-// FormatActiveTaskList returns a Markdown-formatted list of all tasks,
-// split into cron tasks and one-time tasks. Pure domain logic, no Feishu dependency.
-func (s *Scheduler) FormatActiveTaskList() (string, error) {
-	summaries, err := s.GetAllTaskSummary()
-	if err != nil {
-		return "", err
-	}
-
-	if len(summaries) == 0 {
-		return "📋 当前没有活跃任务", nil
-	}
-
-	var sb strings.Builder
-	sb.WriteString("📋 **任务列表**\n")
-
-	var cronTasks, oneTimeTasks []TaskSummary
-	for _, t := range summaries {
-		if t.Schedule != "" {
-			cronTasks = append(cronTasks, t)
-		} else {
-			oneTimeTasks = append(oneTimeTasks, t)
-		}
-	}
-
-	if len(cronTasks) > 0 {
-		sb.WriteString("\n⏰ **定时任务**\n")
-		for _, t := range cronTasks {
-			nextRun := t.NextRunAt
-			if nextRun == "" {
-				nextRun = "-"
-			}
-			sb.WriteString(fmt.Sprintf("  • %s — Cron: %s，下次执行: %s\n", t.Name, t.Schedule, nextRun))
-		}
-	}
-
-	if len(oneTimeTasks) > 0 {
-		sb.WriteString("\n📌 **一次性任务**\n")
-		for _, t := range oneTimeTasks {
-			runAt := t.RunAt
-			if runAt == "" {
-				runAt = "-"
-			}
-			sb.WriteString(fmt.Sprintf("  • %s — 计划时间: %s，状态: %s\n", t.Name, runAt, t.Status))
-		}
-	}
-
-	sb.WriteString(fmt.Sprintf("\n共 **%d** 个任务", len(summaries)))
-	return sb.String(), nil
 }
 
 func (s *Scheduler) handleDaemonStatus(json.RawMessage) (interface{}, error) {
