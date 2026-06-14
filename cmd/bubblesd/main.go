@@ -98,6 +98,17 @@ func main() {
 				return sendErr
 			})
 
+			// 注册 /new 命令：清除当前会话，强制下次消息新建 Claude 会话
+			fch.RegisterCommand("/new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				fch.ClearSession(msg.ChatID)
+				_, sendErr := ch.Send(ctx, &types.SendInput{
+					ChatID:         msg.ChatID,
+					Markdown:       "✅ 会话已重置，下次消息将开启新会话",
+					ReplyMessageID: msg.MessageID,
+				})
+				return sendErr
+			})
+
 			// 注册 /cron-new 命令：发送创建任务的表单卡片
 			fch.RegisterCommand("/cron-new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 				cardJSON := feishu.BuildNewTaskCardJSON()

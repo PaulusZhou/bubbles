@@ -16,8 +16,9 @@ import (
 
 // StreamEvent represents a typed event from Claude's streaming output.
 type StreamEvent struct {
-	Type        string // "thinking" | "text" | "tool_use" | "tool_result" | "result"
+	Type        string // "thinking" | "text" | "tool_use" | "tool_result" | "result" | "system"
 	Text        string
+	SessionID   string // populated on "system" events
 	ToolName    string
 	ToolUseID   string
 	RawContent  json.RawMessage
@@ -175,13 +176,18 @@ func buildClaudeInput(prompt string) ([]byte, error) {
 
 // ClaudeStreamWithEvents executes a prompt via the claude CLI in streaming mode,
 // calling the callback with typed events for each content block.
-func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir string, cb EventCallback) error {
+// If resumeSessionID is non-empty, the session is resumed via --resume.
+func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, resumeSessionID string, cb EventCallback) error {
 	args := []string{
 		"--print",
 		"--output-format", "stream-json",
 		"--input-format", "stream-json",
 		"--verbose",
 		"--permission-mode", "bypassPermissions",
+	}
+	if resumeSessionID != "" {
+		args = append(args, "--resume", resumeSessionID)
+		slog.Info("claude stream: resuming session", "session_id", resumeSessionID)
 	}
 
 	cmd := exec.CommandContext(ctx, claudePath, args...)
@@ -311,6 +317,10 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir str
 		case "system":
 			if msg.SessionID != "" {
 				slog.Info("claude stream: session started", "session_id", msg.SessionID)
+				if err := sendEvent(StreamEvent{Type: "system", SessionID: msg.SessionID}); err != nil {
+					closeStdin()
+					return err
+				}
 			}
 
 		case "result":
@@ -369,8 +379,8 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir str
 }
 
 // ClaudeStreamWithEventsTimeout executes ClaudeStreamWithEvents with a default 30-minute timeout.
-func ClaudeStreamWithEventsTimeout(claudePath, prompt, workDir string, cb EventCallback) error {
+func ClaudeStreamWithEventsTimeout(claudePath, prompt, workDir, resumeSessionID string, cb EventCallback) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 	defer cancel()
-	return ClaudeStreamWithEvents(ctx, claudePath, prompt, workDir, cb)
+	return ClaudeStreamWithEvents(ctx, claudePath, prompt, workDir, resumeSessionID, cb)
 }

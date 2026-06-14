@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 	"strings"
+	"sync"
+	"time"
 
 	lark "github.com/larksuite/oapi-sdk-go/v3"
 	"github.com/larksuite/oapi-sdk-go/v3/channel"
@@ -18,6 +20,15 @@ import (
 	"github.com/pauluszhou/bubbles/internal/daemon"
 )
 
+// chatSession tracks the Claude session ID for a Feishu chat.
+type chatSession struct {
+	sessionID  string
+	lastActive time.Time
+}
+
+// sessionExpiry is how long a session can be idle before being discarded.
+const sessionExpiry = 30 * time.Minute
+
 // CommandHandler handles a Feishu slash command.
 type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error
 
@@ -28,6 +39,9 @@ type FeishuChannel struct {
 	commands        map[string]CommandHandler // prefix -> handler
 	defaultChatID    string
 	scheduler       *daemon.Scheduler // for direct task operations on card callbacks
+
+	sessions   map[string]*chatSession // chatID -> active Claude session
+	sessionsMu sync.Mutex
 }
 
 // New creates a FeishuChannel from the given config.
@@ -54,10 +68,11 @@ func New(cfg *config.Config) *FeishuChannel {
 	slog.Info("feishu channel instance created")
 
 	return &FeishuChannel{
-		ch:             ch,
-		cfg:            cfg,
-		commands:       make(map[string]CommandHandler),
-		defaultChatID:   cfg.FeishuChatID,
+		ch:           ch,
+		cfg:          cfg,
+		commands:     make(map[string]CommandHandler),
+		defaultChatID: cfg.FeishuChatID,
+		sessions:     make(map[string]*chatSession),
 	}
 }
 
@@ -103,6 +118,63 @@ func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion dae
 	return nil
 }
 
+// getResumeSessionID returns the Claude session ID for a chat, or "" if expired/not found.
+func (f *FeishuChannel) getResumeSessionID(chatID string) string {
+	f.sessionsMu.Lock()
+	defer f.sessionsMu.Unlock()
+	s, ok := f.sessions[chatID]
+	if !ok {
+		return ""
+	}
+	if time.Since(s.lastActive) > sessionExpiry {
+		delete(f.sessions, chatID)
+		slog.Info("feishu: session expired", "chat_id", chatID)
+		return ""
+	}
+	return s.sessionID
+}
+
+// updateSession stores or updates the Claude session ID for a chat.
+func (f *FeishuChannel) updateSession(chatID, sessionID string) {
+	f.sessionsMu.Lock()
+	defer f.sessionsMu.Unlock()
+	f.sessions[chatID] = &chatSession{
+		sessionID:  sessionID,
+		lastActive: time.Now(),
+	}
+	slog.Info("feishu: session updated", "chat_id", chatID, "session_id", sessionID)
+}
+
+// touchSession updates the last-active time for a chat session.
+func (f *FeishuChannel) touchSession(chatID string) {
+	f.sessionsMu.Lock()
+	defer f.sessionsMu.Unlock()
+	if s, ok := f.sessions[chatID]; ok {
+		s.lastActive = time.Now()
+	}
+}
+
+// ClearSession removes the Claude session for a chat, forcing the next message to start fresh.
+func (f *FeishuChannel) ClearSession(chatID string) {
+	f.sessionsMu.Lock()
+	defer f.sessionsMu.Unlock()
+	delete(f.sessions, chatID)
+	slog.Info("feishu: session cleared", "chat_id", chatID)
+}
+
+// cleanupSessions removes idle sessions that have exceeded the expiry threshold.
+func (f *FeishuChannel) cleanupSessions() {
+	f.sessionsMu.Lock()
+	defer f.sessionsMu.Unlock()
+	now := time.Now()
+	for chatID, s := range f.sessions {
+		if now.Sub(s.lastActive) > sessionExpiry {
+			delete(f.sessions, chatID)
+			slog.Info("feishu: session cleaned up", "chat_id", chatID)
+		}
+	}
+}
+
 // Start registers event handlers and starts the WebSocket connection.
 func (f *FeishuChannel) Start(ctx context.Context) error {
 	ch := f.ch
@@ -124,7 +196,7 @@ func (f *FeishuChannel) Start(ctx context.Context) error {
 	})
 
 	ch.OnMessage(func(ctx context.Context, msg *types.NormalizedMessage) error {
-		return HandleMessage(ctx, ch, msg, f.cfg, f.commands)
+		return f.HandleMessage(ctx, ch, msg)
 	})
 	slog.Info("feishu message handler registered")
 
@@ -140,6 +212,20 @@ func (f *FeishuChannel) Start(ctx context.Context) error {
 		slog.Info("feishu channel connecting to websocket...")
 		if err := ch.Start(ctx); err != nil {
 			slog.Error("feishu channel start failed", "error", err)
+		}
+	}()
+
+	// Periodically clean up idle sessions
+	go func() {
+		ticker := time.NewTicker(5 * time.Minute)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				f.cleanupSessions()
+			}
 		}
 	}()
 
@@ -162,8 +248,9 @@ func (f *FeishuChannel) Stop(ctx context.Context) error {
 
 // HandleMessage processes an incoming Feishu message.
 // Uses card streaming via UpdateCard() to keep thinking and intermediate text
-// in a single card that updates in place.
-func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, cfg *config.Config, commands map[string]CommandHandler) error {
+// in a single card that updates in place. Resumes the Claude session if one
+// exists for this chat and hasn't expired.
+func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 	slog.Info("received feishu message",
 		"chat_id", msg.ChatID,
 		"chat_type", msg.ChatType,
@@ -174,10 +261,17 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 
 	// 命令分发：检测注册的命令前缀
 	trimmed := strings.TrimSpace(msg.Content)
-	for prefix, handler := range commands {
+	for prefix, handler := range f.commands {
 		if trimmed == prefix || strings.HasPrefix(trimmed, prefix+" ") {
 			return handler(ctx, ch, msg)
 		}
+	}
+
+	resumeSessionID := f.getResumeSessionID(msg.ChatID)
+	if resumeSessionID != "" {
+		slog.Info("feishu: resuming session", "chat_id", msg.ChatID, "session_id", resumeSessionID)
+	} else {
+		slog.Info("feishu: new session", "chat_id", msg.ChatID)
 	}
 
 	state := newCardState()
@@ -192,7 +286,7 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 		return err
 	}
 
-	err = agent.ClaudeStreamWithEventsTimeout(cfg.ClaudePath, msg.Content, cfg.WorkDir, func(event agent.StreamEvent) error {
+	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
 		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
 			if len(event.Text) > 150 {
 				return event.Text[:150]
@@ -200,10 +294,15 @@ func HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedM
 			return event.Text
 		}())
 		switch event.Type {
+		case "system":
+			if event.SessionID != "" {
+				f.updateSession(msg.ChatID, event.SessionID)
+			}
 		case "thinking":
 			state.SetThinking(event.Text)
 		case "result":
 			state.SetFinal(event.Text)
+			f.touchSession(msg.ChatID)
 		}
 		return streamCtrl.UpdateCard(ctx, state.BuildCard())
 	})
@@ -425,7 +524,7 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 		return
 	}
 
-	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, claudePrompt, f.cfg.WorkDir, func(event agent.StreamEvent) error {
+	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, claudePrompt, f.cfg.WorkDir, "", func(event agent.StreamEvent) error {
 		switch event.Type {
 		case "thinking":
 			state.SetThinking(event.Text)
