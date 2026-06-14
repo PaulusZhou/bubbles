@@ -382,6 +382,25 @@ func splitCardBodies(content string, maxBytes int) []string {
 }
 
 func (s *cardState) BuildCard() string {
+	return s.buildCardWithPrefix("")
+}
+
+// BuildExtraCards returns card JSONs for extra content bodies that didn't fit
+// in the main card. Returns nil if no extras. Each call drains the extras.
+func (s *cardState) BuildExtraCards() []string {
+	return s.buildExtraCardsWithPrefix("")
+}
+
+// BuildCardWithName is like BuildCard but includes the session name in the header.
+func (s *cardState) BuildCardWithName(sessionName string) string {
+	if sessionName == "" {
+		return s.BuildCard()
+	}
+	return s.buildCardWithPrefix(sessionName)
+}
+
+// buildCardWithPrefix is the shared implementation for BuildCard and BuildCardWithName.
+func (s *cardState) buildCardWithPrefix(sessionName string) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -393,16 +412,21 @@ func (s *cardState) BuildCard() string {
 	hasFinal := s.finalText.Len() > 0
 
 	headerTitle := "🤖 Claude Code"
+	if sessionName != "" {
+		headerTitle = "🤖 Claude Code — " + sessionName
+	}
 	if hasFinal {
-		headerTitle = "✅ Claude Code"
+		if sessionName != "" {
+			headerTitle = "✅ Claude Code — " + sessionName
+		} else {
+			headerTitle = "✅ Claude Code"
+		}
 	}
 
-	// 初始状态显示思考中提示
 	if !hasFinal && thinking == "" {
 		thinking = "开始执行任务，思考中..."
 	}
 
-	// Build v2 card JSON with markdown tag for proper rendering
 	var elements []map[string]interface{}
 	if thinking != "" {
 		elements = append(elements, map[string]interface{}{
@@ -412,8 +436,6 @@ func (s *cardState) BuildCard() string {
 	}
 
 	if hasFinal && final != "" {
-		// Split content into multiple card bodies to respect Feishu limits:
-		// max 5 tables per card, max 30KB per card message.
 		maxFinal := feishuMaxCardBytes - len(thinking) - 500
 		if maxFinal < 2000 {
 			maxFinal = 2000
@@ -451,20 +473,19 @@ func (s *cardState) BuildCard() string {
 		slog.Error("feishu: failed to marshal card", "error", err)
 		return "{}"
 	}
-	result := string(bs)
-
-	slog.Debug("feishu: card JSON", "card", result)
-	if len(result) > 2000 {
-		slog.Info("feishu: card JSON truncated", "preview", result[:2000])
-	} else {
-		slog.Info("feishu: card JSON", "card", result)
-	}
-	return result
+	return string(bs)
 }
 
-// BuildExtraCards returns card JSONs for extra content bodies that didn't fit
-// in the main card. Returns nil if no extras. Each call drains the extras.
-func (s *cardState) BuildExtraCards() []string {
+// BuildExtraCardsWithName is like BuildExtraCards but includes the session name in the header.
+func (s *cardState) BuildExtraCardsWithName(sessionName string) []string {
+	if sessionName == "" {
+		return s.BuildExtraCards()
+	}
+	return s.buildExtraCardsWithPrefix(sessionName)
+}
+
+// buildExtraCardsWithPrefix is the shared implementation for BuildExtraCards and BuildExtraCardsWithName.
+func (s *cardState) buildExtraCardsWithPrefix(sessionName string) []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if len(s.extraBodies) == 0 {
@@ -473,13 +494,17 @@ func (s *cardState) BuildExtraCards() []string {
 	extras := s.extraBodies
 	s.extraBodies = nil
 
+	title := "✅ Claude Code (续)"
+	if sessionName != "" {
+		title = fmt.Sprintf("✅ Claude Code — %s (续)", sessionName)
+	}
 	cards := make([]string, 0, len(extras))
 	for _, body := range extras {
 		card := map[string]interface{}{
 			"schema": "2.0",
 			"header": map[string]interface{}{
 				"template": "blue",
-				"title":    map[string]interface{}{"tag": "plain_text", "content": "✅ Claude Code (续)"},
+				"title":    map[string]interface{}{"tag": "plain_text", "content": title},
 			},
 			"body": map[string]interface{}{
 				"elements": []map[string]interface{}{
@@ -495,6 +520,105 @@ func (s *cardState) BuildExtraCards() []string {
 		cards = append(cards, string(bs))
 	}
 	return cards
+}
+
+// sessionButton creates a button for session actions (switch/close).
+func sessionButton(text, buttonType, action, sessionKey string) map[string]interface{} {
+	value := map[string]string{"action": action, "session_key": sessionKey}
+	return map[string]interface{}{
+		"tag":       "button",
+		"text":      map[string]string{"tag": "plain_text", "content": text},
+		"type":      buttonType,
+		"value":     value,
+		"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+	}
+}
+
+// BuildSessionsCard builds a Feishu v2 card showing all sessions for a chat.
+func BuildSessionsCard(sessions []*ChatSession, activeKey string) string {
+	if len(sessions) == 0 {
+		card := map[string]interface{}{
+			"schema": "2.0",
+			"header": map[string]interface{}{
+				"template": "blue",
+				"title":    map[string]interface{}{"tag": "plain_text", "content": "📋 会话列表"},
+			},
+			"body": map[string]interface{}{
+				"elements": []map[string]interface{}{
+					{"tag": "markdown", "content": "暂无会话。发送消息将自动创建一个新会话。"},
+				},
+			},
+		}
+		bs, _ := json.Marshal(card)
+		return string(bs)
+	}
+
+	var elements []map[string]interface{}
+	for _, s := range sessions {
+		activeMark := ""
+		if s.key == activeKey {
+			activeMark = " ✅ **(当前)**"
+		}
+
+		age := time.Since(s.created).Truncate(time.Minute)
+		idle := time.Since(s.lastActive).Truncate(time.Minute)
+		info := fmt.Sprintf("**%s**%s\n创建: %s 前 | 最后活跃: %s 前",
+			s.name, activeMark, formatDuration(age), formatDuration(idle))
+		if s.firstMessage != "" {
+			info += fmt.Sprintf("\n> %s", s.firstMessage)
+		}
+
+		elements = append(elements, map[string]interface{}{
+			"tag":     "markdown",
+			"content": info,
+		})
+
+		// Buttons: switch (if not active) and close
+		var buttons []map[string]interface{}
+		if s.key != activeKey {
+			buttons = append(buttons, sessionButton("切换", "primary", "switch_session", s.key))
+		}
+		buttons = append(buttons, sessionButton("关闭", "danger", "close_session", s.key))
+		elements = append(elements, taskButtonRow(buttons...))
+		elements = append(elements, map[string]interface{}{"tag": "hr"})
+	}
+
+	// Remove trailing hr
+	if len(elements) > 0 && elements[len(elements)-1]["tag"] == "hr" {
+		elements = elements[:len(elements)-1]
+	}
+
+	card := map[string]interface{}{
+		"schema": "2.0",
+		"header": map[string]interface{}{
+			"template": "blue",
+			"title":    map[string]interface{}{"tag": "plain_text", "content": "📋 会话列表"},
+		},
+		"body": map[string]interface{}{
+			"elements": elements,
+		},
+	}
+
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal sessions card", "error", err)
+		return "{}"
+	}
+	return string(bs)
+}
+
+// formatDuration formats a duration in a human-readable Chinese format.
+func formatDuration(d time.Duration) string {
+	if d < time.Minute {
+		return "刚刚"
+	}
+	if d < time.Hour {
+		return fmt.Sprintf("%d 分钟", int(d.Minutes()))
+	}
+	if d < 24*time.Hour {
+		return fmt.Sprintf("%d 小时", int(d.Hours()))
+	}
+	return fmt.Sprintf("%d 天", int(d.Hours()/24))
 }
 
 // splitMessage splits a long string into chunks of at most maxLen runes,

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/larksuite/oapi-sdk-go/v3/channel/types"
@@ -98,12 +99,26 @@ func main() {
 				return sendErr
 			})
 
-			// 注册 /new 命令：清除当前会话，强制下次消息新建 Claude 会话
+			// 注册 /new 命令：创建新会话并切换为活跃会话
 			fch.RegisterCommand("/new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
-				fch.ClearSession(msg.ChatID)
+				trimmed := feishu.StripMentionPrefix(msg.Content)
+				name := strings.TrimSpace(strings.TrimPrefix(trimmed, "/new"))
+				s := fch.NewSession(msg.ChatID, name)
 				_, sendErr := ch.Send(ctx, &types.SendInput{
 					ChatID:         msg.ChatID,
-					Markdown:       "✅ 会话已重置，下次消息将开启新会话",
+					Markdown:       fmt.Sprintf("✅ 已创建并切换到会话: **%s**", s.Name()),
+					ReplyMessageID: msg.MessageID,
+				})
+				return sendErr
+			})
+
+			// 注册 /sessions 命令：显示所有会话卡片
+			fch.RegisterCommand("/sessions", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				sessions, activeKey := fch.GetSessions(msg.ChatID)
+				cardJSON := feishu.BuildSessionsCard(sessions, activeKey)
+				_, sendErr := ch.Send(ctx, &types.SendInput{
+					ChatID:         msg.ChatID,
+					Card:           cardJSON,
 					ReplyMessageID: msg.MessageID,
 				})
 				return sendErr

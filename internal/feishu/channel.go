@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -20,14 +21,30 @@ import (
 	"github.com/pauluszhou/bubbles/internal/daemon"
 )
 
-// chatSession tracks the Claude session ID for a Feishu chat.
-type chatSession struct {
-	sessionID  string
-	lastActive time.Time
+// ChatSession tracks a single Claude conversation within a Feishu chat.
+type ChatSession struct {
+	key          string    // unique key, e.g. "s1", "s2"
+	name         string    // display name, e.g. "会话 1" or user-provided
+	claudeSID    string    // Claude session ID for --resume
+	firstMessage string    // user's first message in this session (for display)
+	created      time.Time
+	lastActive   time.Time
+	sem          chan struct{} // capacity-1 semaphore to serialize messages within this session
+}
+
+// Name returns the display name of the session.
+func (s *ChatSession) Name() string { return s.name }
+
+// chatState holds all sessions for a single Feishu chat.
+type chatState struct {
+	sessions  map[string]*ChatSession // sessionKey -> session
+	activeKey string                  // current active session key
+	nextID    int                     // auto-increment counter for session keys
+	mu        sync.Mutex
 }
 
 // sessionExpiry is how long a session can be idle before being discarded.
-const sessionExpiry = 30 * time.Minute
+const sessionExpiry = 60 * time.Minute
 
 // CommandHandler handles a Feishu slash command.
 type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error
@@ -40,8 +57,8 @@ type FeishuChannel struct {
 	defaultChatID string
 	scheduler     *daemon.Scheduler // for direct task operations on card callbacks
 
-	sessions   map[string]*chatSession // chatID -> active Claude session
-	sessionsMu sync.Mutex
+	chatStates   map[string]*chatState // chatID -> chat state
+	chatStatesMu sync.Mutex
 }
 
 // New creates a FeishuChannel from the given config.
@@ -72,7 +89,7 @@ func New(cfg *config.Config) *FeishuChannel {
 		cfg:           cfg,
 		commands:      make(map[string]CommandHandler),
 		defaultChatID: cfg.FeishuChatID,
-		sessions:      make(map[string]*chatSession),
+		chatStates:    make(map[string]*chatState),
 	}
 }
 
@@ -120,61 +137,304 @@ func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion dae
 	return nil
 }
 
-// getResumeSessionID returns the Claude session ID for a chat, or "" if expired/not found.
-func (f *FeishuChannel) getResumeSessionID(chatID string) string {
-	f.sessionsMu.Lock()
-	defer f.sessionsMu.Unlock()
-	s, ok := f.sessions[chatID]
+// getChatState returns the chat state for a chatID, creating it if needed.
+func (f *FeishuChannel) getChatState(chatID string) *chatState {
+	f.chatStatesMu.Lock()
+	defer f.chatStatesMu.Unlock()
+	cs, ok := f.chatStates[chatID]
+	if !ok {
+		cs = &chatState{
+			sessions: make(map[string]*ChatSession),
+		}
+		f.chatStates[chatID] = cs
+	}
+	return cs
+}
+
+// getOrCreateActiveSession returns the active session for a chat, creating a default one if needed.
+func (f *FeishuChannel) getOrCreateActiveSession(chatID string) *ChatSession {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	if cs.activeKey != "" {
+		if s, ok := cs.sessions[cs.activeKey]; ok {
+			return s
+		}
+	}
+
+	// No active session — create a default one
+	cs.nextID++
+	key := fmt.Sprintf("s%d", cs.nextID)
+	s := &ChatSession{
+		key:        key,
+		name:       fmt.Sprintf("会话 %d", cs.nextID),
+		created:    time.Now(),
+		lastActive: time.Now(),
+		sem:        make(chan struct{}, 1),
+	}
+	cs.sessions[key] = s
+	cs.activeKey = key
+	slog.Info("feishu: default session created", "chat_id", chatID, "session_key", key, "name", s.name)
+	return s
+}
+
+// getResumeSessionID returns the Claude session ID for a session, or "" if expired/not found.
+func (f *FeishuChannel) getResumeSessionID(chatID, sessionKey string) string {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	s, ok := cs.sessions[sessionKey]
 	if !ok {
 		return ""
 	}
 	if time.Since(s.lastActive) > sessionExpiry {
-		delete(f.sessions, chatID)
-		slog.Info("feishu: session expired", "chat_id", chatID)
+		delete(cs.sessions, sessionKey)
+		slog.Info("feishu: session expired", "chat_id", chatID, "session_key", sessionKey)
 		return ""
 	}
-	return s.sessionID
+	return s.claudeSID
 }
 
-// updateSession stores or updates the Claude session ID for a chat.
-func (f *FeishuChannel) updateSession(chatID, sessionID string) {
-	f.sessionsMu.Lock()
-	defer f.sessionsMu.Unlock()
-	f.sessions[chatID] = &chatSession{
-		sessionID:  sessionID,
-		lastActive: time.Now(),
+// updateSession stores or updates the Claude session ID for a session.
+func (f *FeishuChannel) updateSession(chatID, sessionKey, claudeSID string) {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if s, ok := cs.sessions[sessionKey]; ok {
+		s.claudeSID = claudeSID
+		s.lastActive = time.Now()
+		slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "claude_sid", claudeSID)
 	}
-	slog.Info("feishu: session updated", "chat_id", chatID, "session_id", sessionID)
 }
 
-// touchSession updates the last-active time for a chat session.
-func (f *FeishuChannel) touchSession(chatID string) {
-	f.sessionsMu.Lock()
-	defer f.sessionsMu.Unlock()
-	if s, ok := f.sessions[chatID]; ok {
+// touchSession updates the last-active time for a session.
+func (f *FeishuChannel) touchSession(chatID, sessionKey string) {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if s, ok := cs.sessions[sessionKey]; ok {
 		s.lastActive = time.Now()
 	}
 }
 
-// ClearSession removes the Claude session for a chat, forcing the next message to start fresh.
-func (f *FeishuChannel) ClearSession(chatID string) {
-	f.sessionsMu.Lock()
-	defer f.sessionsMu.Unlock()
-	delete(f.sessions, chatID)
-	slog.Info("feishu: session cleared", "chat_id", chatID)
+// NewSession creates a new session for a chat and sets it as active.
+func (f *FeishuChannel) NewSession(chatID, name string) *ChatSession {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+
+	cs.nextID++
+	key := fmt.Sprintf("s%d", cs.nextID)
+	if name == "" {
+		name = fmt.Sprintf("会话 %d", cs.nextID)
+	}
+	s := &ChatSession{
+		key:        key,
+		name:       name,
+		created:    time.Now(),
+		lastActive: time.Now(),
+		sem:        make(chan struct{}, 1),
+	}
+	cs.sessions[key] = s
+	cs.activeKey = key
+	slog.Info("feishu: new session created", "chat_id", chatID, "session_key", key, "name", name)
+	return s
+}
+
+// SwitchSession switches the active session for a chat.
+func (f *FeishuChannel) SwitchSession(chatID, sessionKey string) error {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if _, ok := cs.sessions[sessionKey]; !ok {
+		return fmt.Errorf("session %s not found", sessionKey)
+	}
+	cs.activeKey = sessionKey
+	slog.Info("feishu: session switched", "chat_id", chatID, "session_key", sessionKey)
+	return nil
+}
+
+// CloseSession removes a session from a chat. If it was active, switch to the most recent remaining session.
+func (f *FeishuChannel) CloseSession(chatID, sessionKey string) error {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if _, ok := cs.sessions[sessionKey]; !ok {
+		return fmt.Errorf("session %s not found", sessionKey)
+	}
+	delete(cs.sessions, sessionKey)
+
+	// If this was the active session, switch to the most recent remaining
+	if cs.activeKey == sessionKey {
+		cs.activeKey = ""
+		if latest := cs.mostRecentSession(); latest != nil {
+			cs.activeKey = latest.key
+			slog.Info("feishu: active session switched after close", "chat_id", chatID, "new_active", latest.key)
+		}
+	}
+	slog.Info("feishu: session closed", "chat_id", chatID, "session_key", sessionKey)
+	return nil
+}
+
+// GetSessions returns all sessions for a chat and the active key.
+func (f *FeishuChannel) GetSessions(chatID string) ([]*ChatSession, string) {
+	cs := f.getChatState(chatID)
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	sessions := make([]*ChatSession, 0, len(cs.sessions))
+	for _, s := range cs.sessions {
+		sessions = append(sessions, s)
+	}
+	sort.Slice(sessions, func(i, j int) bool {
+		return sessions[i].created.Before(sessions[j].created)
+	})
+	return sessions, cs.activeKey
+}
+
+// mostRecentSession returns the session with the most recent lastActive time, or nil if empty.
+// Caller must hold cs.mu.
+func (cs *chatState) mostRecentSession() *ChatSession {
+	var latest *ChatSession
+	for _, s := range cs.sessions {
+		if latest == nil || s.lastActive.After(latest.lastActive) {
+			latest = s
+		}
+	}
+	return latest
 }
 
 // cleanupSessions removes idle sessions that have exceeded the expiry threshold.
 func (f *FeishuChannel) cleanupSessions() {
-	f.sessionsMu.Lock()
-	defer f.sessionsMu.Unlock()
+	f.chatStatesMu.Lock()
+	chatIDs := make([]string, 0, len(f.chatStates))
+	for chatID := range f.chatStates {
+		chatIDs = append(chatIDs, chatID)
+	}
+	f.chatStatesMu.Unlock()
+
 	now := time.Now()
-	for chatID, s := range f.sessions {
-		if now.Sub(s.lastActive) > sessionExpiry {
-			delete(f.sessions, chatID)
-			slog.Info("feishu: session cleaned up", "chat_id", chatID)
+	for _, chatID := range chatIDs {
+		cs := f.getChatState(chatID)
+		cs.mu.Lock()
+		activeExpired := false
+		for key, s := range cs.sessions {
+			if now.Sub(s.lastActive) > sessionExpiry {
+				delete(cs.sessions, key)
+				slog.Info("feishu: session cleaned up", "chat_id", chatID, "session_key", key)
+				if cs.activeKey == key {
+					activeExpired = true
+				}
+			}
+		}
+		if activeExpired {
+			cs.activeKey = ""
+			if latest := cs.mostRecentSession(); latest != nil {
+				cs.activeKey = latest.key
+				slog.Info("feishu: active session switched after cleanup", "chat_id", chatID, "new_active", latest.key)
+			}
+		}
+		cs.mu.Unlock()
+	}
+}
+
+// truncateRunes truncates a string to at most n runes, appending "…" if truncated.
+func truncateRunes(s string, n int) string {
+	runes := []rune(s)
+	if len(runes) <= n {
+		return s
+	}
+	return string(runes[:n]) + "…"
+}
+
+// processMessage handles a single message with Claude streaming in its own goroutine.
+func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sessionKey string) {
+	chatID := msg.ChatID
+	cs := f.getChatState(chatID)
+
+	slog.Info("feishu: processing message",
+		"chat_id", chatID,
+		"session_key", sessionKey,
+		"message_id", msg.MessageID,
+		"content", msg.Content,
+	)
+
+	resumeSessionID := f.getResumeSessionID(chatID, sessionKey)
+	if resumeSessionID != "" {
+		slog.Info("feishu: resuming session", "chat_id", chatID, "session_key", sessionKey, "session_id", resumeSessionID)
+	} else {
+		slog.Info("feishu: new session", "chat_id", chatID, "session_key", sessionKey)
+	}
+
+	// Get session name for card header, store first message if new
+	cs.mu.Lock()
+	sessionName := ""
+	if s, ok := cs.sessions[sessionKey]; ok {
+		sessionName = s.name
+		if s.firstMessage == "" {
+			s.firstMessage = truncateRunes(msg.Content, 100)
 		}
 	}
+	cs.mu.Unlock()
+
+	state := newCardState()
+
+	streamCtrl, err := ch.Stream(ctx, &types.SendInput{
+		ChatID:         chatID,
+		ReplyMessageID: msg.MessageID,
+		Card:           state.BuildCard(),
+	})
+	if err != nil {
+		slog.Error("feishu: failed to start card stream", "chat_id", chatID, "error", err)
+		return
+	}
+
+	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
+		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
+			if len(event.Text) > 150 {
+				return event.Text[:150]
+			}
+			return event.Text
+		}())
+		switch event.Type {
+		case "system":
+			if event.SessionID != "" {
+				cs.mu.Lock()
+				if s, ok := cs.sessions[sessionKey]; ok {
+					s.claudeSID = event.SessionID
+					s.lastActive = time.Now()
+					slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "claude_sid", event.SessionID)
+				}
+				cs.mu.Unlock()
+			}
+		case "thinking":
+			state.SetThinking(event.Text)
+		case "result":
+			state.SetFinal(event.Text)
+			cs.mu.Lock()
+			if s, ok := cs.sessions[sessionKey]; ok {
+				s.lastActive = time.Now()
+			}
+			cs.mu.Unlock()
+		}
+		return streamCtrl.UpdateCard(ctx, state.BuildCardWithName(sessionName))
+	})
+
+	streamCtrl.Close(ctx)
+
+	if err != nil {
+		slog.Error("feishu: claude stream failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		return
+	}
+
+	// Send extra cards if content was split
+	for _, cardJSON := range state.BuildExtraCardsWithName(sessionName) {
+		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: chatID, Card: cardJSON}); sendErr != nil {
+			slog.Error("feishu: failed to send extra card", "chat_id", chatID, "error", sendErr)
+		}
+	}
+
+	slog.Info("feishu: message processed", "chat_id", chatID, "session_key", sessionKey)
 }
 
 // Start registers event handlers and starts the WebSocket connection.
@@ -202,13 +462,11 @@ func (f *FeishuChannel) Start(ctx context.Context) error {
 	})
 	slog.Info("feishu message handler registered")
 
-	// Register card action handler for interactive task cards
-	if f.scheduler != nil {
-		ch.OnCardAction(func(ctx context.Context, event *types.CardActionEvent) error {
-			return f.handleCardAction(ctx, event)
-		})
-		slog.Info("feishu card action handler registered")
-	}
+	// Register card action handler for session and task management
+	ch.OnCardAction(func(ctx context.Context, event *types.CardActionEvent) error {
+		return f.handleCardAction(ctx, event)
+	})
+	slog.Info("feishu card action handler registered")
 
 	go func() {
 		slog.Info("feishu channel connecting to websocket...")
@@ -249,9 +507,8 @@ func (f *FeishuChannel) Stop(ctx context.Context) error {
 }
 
 // HandleMessage processes an incoming Feishu message.
-// Uses card streaming via UpdateCard() to keep thinking and intermediate text
-// in a single card that updates in place. Resumes the Claude session if one
-// exists for this chat and hasn't expired.
+// Commands are handled synchronously. Non-command messages are processed
+// concurrently in their own goroutines.
 func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 	slog.Info("received feishu message",
 		"chat_id", msg.ChatID,
@@ -262,81 +519,43 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	)
 
 	// 命令分发：去掉 mention 前缀后检测命令（群聊中 @机器人 会产生 @_user_1 等占位符）
-	trimmed := stripMentionPrefix(msg.Content)
+	trimmed := StripMentionPrefix(msg.Content)
 	for prefix, handler := range f.commands {
 		if trimmed == prefix || strings.HasPrefix(trimmed, prefix+" ") {
 			return handler(ctx, ch, msg)
 		}
 	}
 
-	resumeSessionID := f.getResumeSessionID(msg.ChatID)
-	if resumeSessionID != "" {
-		slog.Info("feishu: resuming session", "chat_id", msg.ChatID, "session_id", resumeSessionID)
-	} else {
-		slog.Info("feishu: new session", "chat_id", msg.ChatID)
-	}
+	// 非命令消息：获取活跃会话，在独立 goroutine 中处理
+	// 同一会话的消息串行执行（保护 claudeSID 链），不同会话并发
+	activeSession := f.getOrCreateActiveSession(msg.ChatID)
+	sessionKey := activeSession.key
+	sem := activeSession.sem
 
-	state := newCardState()
+	// Use Background context because this goroutine outlives the message handler.
+	// The 35-minute timeout prevents runaway Claude sessions.
+	msgCtx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
+	go func() {
+		defer cancel()
+		sem <- struct{}{} // 同一会话排队等待
+		defer func() { <-sem }()
+		f.processMessage(msgCtx, ch, msg, sessionKey)
+	}()
 
-	streamCtrl, err := ch.Stream(ctx, &types.SendInput{
-		ChatID:         msg.ChatID,
-		ReplyMessageID: msg.MessageID,
-		Card:           state.BuildCard(),
-	})
-	if err != nil {
-		slog.Error("feishu: failed to start card stream", "chat_id", msg.ChatID, "error", err)
-		return err
-	}
-
-	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
-		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
-			if len(event.Text) > 150 {
-				return event.Text[:150]
-			}
-			return event.Text
-		}())
-		switch event.Type {
-		case "system":
-			if event.SessionID != "" {
-				f.updateSession(msg.ChatID, event.SessionID)
-			}
-		// case "text":
-		// 	state.SetThinking(event.Text)
-		case "thinking":
-			state.SetThinking(event.Text)
-		case "result":
-			state.SetFinal(event.Text)
-			f.touchSession(msg.ChatID)
-		}
-		return streamCtrl.UpdateCard(ctx, state.BuildCard())
-	})
-
-	streamCtrl.Close(ctx)
-
-	if err != nil {
-		slog.Error("feishu: claude stream failed", "chat_id", msg.ChatID, "error", err)
-		return err
-	}
-
-	// Send extra cards if content was split
-	for _, cardJSON := range state.BuildExtraCards() {
-		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Card: cardJSON}); sendErr != nil {
-			slog.Error("feishu: failed to send extra card", "chat_id", msg.ChatID, "error", sendErr)
-		}
-	}
-
-	slog.Info("feishu: card stream completed", "chat_id", msg.ChatID)
+	slog.Info("feishu: message dispatched", "chat_id", msg.ChatID, "session_key", sessionKey, "session_name", activeSession.name)
 	return nil
 }
 
-// handleCardAction processes button clicks on interactive task cards.
+// handleCardAction processes button clicks on interactive cards.
 func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardActionEvent) error {
 	action, _ := event.Action.Value["action"].(string)
 	taskID, _ := event.Action.Value["task_id"].(string)
+	sessionKey, _ := event.Action.Value["session_key"].(string)
 
 	slog.Info("feishu: card action received",
 		"action", action,
 		"task_id", taskID,
+		"session_key", sessionKey,
 		"chat_id", event.ChatID,
 		"operator", event.Operator.OpenID,
 		"form_value", fmt.Sprintf("%v", event.Action.FormValue),
@@ -346,12 +565,43 @@ func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardA
 		return nil
 	}
 
+	// Handle session actions
+	switch action {
+	case "switch_session":
+		if sessionKey == "" {
+			return nil
+		}
+		if err := f.SwitchSession(event.ChatID, sessionKey); err != nil {
+			f.ch.Send(ctx, &types.SendInput{ChatID: event.ChatID, Text: fmt.Sprintf("❌ 切换失败: %v", err)})
+		} else {
+			sessions, activeKey := f.GetSessions(event.ChatID)
+			for _, s := range sessions {
+				if s.key == activeKey {
+					f.ch.Send(ctx, &types.SendInput{ChatID: event.ChatID, Text: fmt.Sprintf("✅ 已切换到会话: %s", s.name)})
+					break
+				}
+			}
+		}
+		return nil
+	case "close_session":
+		if sessionKey == "" {
+			return nil
+		}
+		if err := f.CloseSession(event.ChatID, sessionKey); err != nil {
+			f.ch.Send(ctx, &types.SendInput{ChatID: event.ChatID, Text: fmt.Sprintf("❌ 关闭失败: %v", err)})
+		} else {
+			f.ch.Send(ctx, &types.SendInput{ChatID: event.ChatID, Text: "✅ 会话已关闭"})
+		}
+		return nil
+	}
+
 	// Handle create_task form submission (no taskID required)
 	if action == "create_task" {
 		return f.handleCreateTaskAction(ctx, event)
 	}
 
-	if taskID == "" {
+	// Handle task actions (requires scheduler)
+	if f.scheduler == nil || taskID == "" {
 		return nil
 	}
 
@@ -409,9 +659,9 @@ func parseFormString(fv map[string]interface{}, key string) string {
 	return s
 }
 
-// stripMentionPrefix removes leading @_user_N mention placeholders from message content.
+// StripMentionPrefix removes leading @_user_N mention placeholders from message content.
 // In Feishu group chats, @mentioning the bot produces content like "@_user_1 /new".
-func stripMentionPrefix(content string) string {
+func StripMentionPrefix(content string) string {
 	s := strings.TrimSpace(content)
 	for {
 		if !strings.HasPrefix(s, "@_user_") {
