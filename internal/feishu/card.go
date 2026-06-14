@@ -284,13 +284,21 @@ bubbles create -n %q -s %q -p %q
 
 // cardState accumulates thinking and final text for a card stream.
 type cardState struct {
-	mu        sync.Mutex
-	thinking  strings.Builder
-	finalText strings.Builder
-	gotResult bool
+	mu          sync.Mutex
+	thinking    strings.Builder
+	finalText   strings.Builder
+	gotResult   bool
+	extraBodies []string // extra card bodies when content is split
 }
 
-const cardThinkingMaxLen = 8000
+const (
+	cardThinkingMaxLen = 8000
+	// feishuMaxTables is the maximum number of table components allowed per Feishu card.
+	// Exceeding this limit triggers API error 11310 ("card table number over limit").
+	feishuMaxTables = 5
+	// feishuMaxCardBytes is the maximum size of a Feishu card message (30 KB).
+	feishuMaxCardBytes = 30000
+)
 
 func newCardState() *cardState {
 	return &cardState{}
@@ -308,6 +316,69 @@ func (s *cardState) SetFinal(text string) {
 	defer s.mu.Unlock()
 	s.gotResult = true
 	s.finalText.WriteString(text)
+}
+
+// splitCardBodies splits markdown content into multiple chunks that each fit
+// within a Feishu card. It splits on table boundaries (max feishuMaxTables per
+// chunk) and newline boundaries (max maxBytes per chunk).
+func splitCardBodies(content string, maxBytes int) []string {
+	lines := strings.Split(content, "\n")
+	type tableBlock struct{ start, end int }
+
+	// Find all table blocks
+	var tables []tableBlock
+	inTable := false
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		isRow := strings.HasPrefix(trimmed, "|") && strings.HasSuffix(trimmed, "|")
+		if isRow && !inTable {
+			tables = append(tables, tableBlock{start: i})
+			inTable = true
+		} else if !isRow && inTable {
+			tables[len(tables)-1].end = i
+			inTable = false
+		}
+	}
+	if inTable {
+		tables[len(tables)-1].end = len(lines)
+	}
+
+	// Split into chunks at table boundaries when table count exceeds limit
+	var chunks []string
+	if len(tables) <= feishuMaxTables {
+		chunks = append(chunks, content)
+	} else {
+		slog.Info("feishu: table count exceeds limit, splitting into multiple cards",
+			"total", len(tables), "limit", feishuMaxTables)
+		chunkStart := 0
+		tableCount := 0
+		for _, t := range tables {
+			tableCount++
+			if tableCount > feishuMaxTables {
+				chunks = append(chunks, strings.Join(lines[chunkStart:t.start], "\n"))
+				chunkStart = t.start
+				tableCount = 1
+			}
+		}
+		chunks = append(chunks, strings.Join(lines[chunkStart:], "\n"))
+	}
+
+	// Further split any chunk that exceeds maxBytes at newline boundaries
+	var result []string
+	for _, chunk := range chunks {
+		for len(chunk) > maxBytes {
+			cut := chunk[:maxBytes]
+			if idx := strings.LastIndex(cut, "\n"); idx > maxBytes/2 {
+				cut = cut[:idx]
+			}
+			result = append(result, cut)
+			chunk = strings.TrimLeft(chunk[len(cut):], "\n")
+		}
+		if chunk != "" {
+			result = append(result, chunk)
+		}
+	}
+	return result
 }
 
 func (s *cardState) BuildCard() string {
@@ -341,6 +412,17 @@ func (s *cardState) BuildCard() string {
 	}
 
 	if hasFinal && final != "" {
+		// Split content into multiple card bodies to respect Feishu limits:
+		// max 5 tables per card, max 30KB per card message.
+		maxFinal := feishuMaxCardBytes - len(thinking) - 500
+		if maxFinal < 2000 {
+			maxFinal = 2000
+		}
+		bodies := splitCardBodies(final, maxFinal)
+		final = bodies[0]
+		if len(bodies) > 1 {
+			s.extraBodies = bodies[1:]
+		}
 		elements = append(elements,
 			map[string]interface{}{"tag": "hr"},
 			map[string]interface{}{
@@ -380,6 +462,41 @@ func (s *cardState) BuildCard() string {
 	return result
 }
 
+// BuildExtraCards returns card JSONs for extra content bodies that didn't fit
+// in the main card. Returns nil if no extras. Each call drains the extras.
+func (s *cardState) BuildExtraCards() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if len(s.extraBodies) == 0 {
+		return nil
+	}
+	extras := s.extraBodies
+	s.extraBodies = nil
+
+	cards := make([]string, 0, len(extras))
+	for _, body := range extras {
+		card := map[string]interface{}{
+			"schema": "2.0",
+			"header": map[string]interface{}{
+				"template": "blue",
+				"title":    map[string]interface{}{"tag": "plain_text", "content": "✅ Claude Code (续)"},
+			},
+			"body": map[string]interface{}{
+				"elements": []map[string]interface{}{
+					{"tag": "markdown", "content": body},
+				},
+			},
+		}
+		bs, err := json.Marshal(card)
+		if err != nil {
+			slog.Error("feishu: failed to marshal extra card", "error", err)
+			continue
+		}
+		cards = append(cards, string(bs))
+	}
+	return cards
+}
+
 // splitMessage splits a long string into chunks of at most maxLen runes,
 // trying to break at newlines.
 func splitMessage(s string, maxLen int) []string {
@@ -417,7 +534,7 @@ func splitMessage(s string, maxLen int) []string {
 // --- Task completion notification card ---
 
 // BuildTaskCompletionCard builds a v2 card for task completion notification.
-func BuildTaskCompletionCard(c daemon.TaskCompletion) string {
+func BuildTaskCompletionCard(c daemon.TaskCompletion) []string {
 	taskName := c.TaskName
 	if taskName == "" {
 		taskName = c.TaskID
@@ -456,27 +573,51 @@ func BuildTaskCompletionCard(c daemon.TaskCompletion) string {
 		startTime, endTime,
 	)
 
+	// Split output into multiple card bodies to respect Feishu limits
+	bodies := splitCardBodies(output, feishuMaxCardBytes-500)
+	cardTitle := fmt.Sprintf("%s 任务完成: %s", statusEmoji, taskName)
+
+	// First card: info + first body
 	elements := []map[string]interface{}{
 		{"tag": "markdown", "content": info},
 		{"tag": "hr"},
-		{"tag": "markdown", "content": "📝 **执行输出**\n\n" + output},
+		{"tag": "markdown", "content": "📝 **执行输出**\n\n" + bodies[0]},
 	}
-
-	card := map[string]interface{}{
+	firstCard := map[string]interface{}{
 		"schema": "2.0",
 		"header": map[string]interface{}{
 			"template": headerColor,
-			"title":    map[string]interface{}{"tag": "plain_text", "content": fmt.Sprintf("%s 任务完成: %s", statusEmoji, taskName)},
+			"title":    map[string]interface{}{"tag": "plain_text", "content": cardTitle},
 		},
-		"body": map[string]interface{}{
-			"elements": elements,
-		},
+		"body": map[string]interface{}{"elements": elements},
 	}
-
-	bs, err := json.Marshal(card)
+	firstJSON, err := json.Marshal(firstCard)
 	if err != nil {
 		slog.Error("feishu: failed to marshal task completion card", "error", err)
-		return "{}"
+		return []string{"{}"}
 	}
-	return string(bs)
+	cards := []string{string(firstJSON)}
+
+	// Extra cards for remaining bodies
+	for _, body := range bodies[1:] {
+		extraCard := map[string]interface{}{
+			"schema": "2.0",
+			"header": map[string]interface{}{
+				"template": headerColor,
+				"title":    map[string]interface{}{"tag": "plain_text", "content": cardTitle + " (续)"},
+			},
+			"body": map[string]interface{}{
+				"elements": []map[string]interface{}{
+					{"tag": "markdown", "content": body},
+				},
+			},
+		}
+		bs, err := json.Marshal(extraCard)
+		if err != nil {
+			slog.Error("feishu: failed to marshal extra task completion card", "error", err)
+			continue
+		}
+		cards = append(cards, string(bs))
+	}
+	return cards
 }

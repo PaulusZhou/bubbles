@@ -99,21 +99,23 @@ func (f *FeishuChannel) NotifyTaskCompletion(ctx context.Context, completion dae
 		return nil
 	}
 
-	cardJSON := BuildTaskCompletionCard(completion)
+	cards := BuildTaskCompletionCard(completion)
 
-	_, err := f.ch.Send(ctx, &types.SendInput{
-		ChatID: f.defaultChatID,
-		Card:   cardJSON,
-	})
-	if err != nil {
-		slog.Error("feishu: failed to send task completion notification",
-			"task_id", completion.TaskID,
-			"error", err,
-		)
-		return err
+	for i, cardJSON := range cards {
+		_, err := f.ch.Send(ctx, &types.SendInput{
+			ChatID: f.defaultChatID,
+			Card:   cardJSON,
+		})
+		if err != nil {
+			slog.Error("feishu: failed to send task completion notification",
+				"task_id", completion.TaskID, "card_index", i,
+				"error", err,
+			)
+			return err
+		}
 	}
 	slog.Info("feishu: task completion notification sent",
-		"task_id", completion.TaskID,
+		"task_id", completion.TaskID, "card_count", len(cards),
 	)
 	return nil
 }
@@ -316,12 +318,11 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 		return err
 	}
 
-	// Log final card for debugging
-	finalCard := state.BuildCard()
-	if len(finalCard) > 3000 {
-		slog.Info("feishu: final card JSON", "preview", finalCard[:3000])
-	} else {
-		slog.Info("feishu: final card JSON", "card", finalCard)
+	// Send extra cards if content was split
+	for _, cardJSON := range state.BuildExtraCards() {
+		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Card: cardJSON}); sendErr != nil {
+			slog.Error("feishu: failed to send extra card", "chat_id", msg.ChatID, "error", sendErr)
+		}
 	}
 
 	slog.Info("feishu: card stream completed", "chat_id", msg.ChatID)
@@ -518,6 +519,13 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 	if err != nil {
 		slog.Error("feishu: claude stream failed for create task", "chat_id", chatID, "error", err)
 		return
+	}
+
+	// Send extra cards if content was split
+	for _, cardJSON := range state.BuildExtraCards() {
+		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: chatID, Card: cardJSON}); sendErr != nil {
+			slog.Error("feishu: failed to send extra card", "chat_id", chatID, "error", sendErr)
+		}
 	}
 
 	slog.Info("feishu: create task stream completed", "chat_id", chatID)
