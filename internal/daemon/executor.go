@@ -13,16 +13,29 @@ import (
 	"github.com/pauluszhou/bubbles/internal/store"
 )
 
+// ClaudeRunner abstracts the Claude CLI invocation, allowing mock injection for testing.
+type ClaudeRunner interface {
+	Run(claudePath, prompt, workDir string) agent.ClaudeResult
+}
+
+// defaultRunner delegates to agent.ClaudeWithTimeout.
+type defaultRunner struct{}
+
+func (r *defaultRunner) Run(claudePath, prompt, workDir string) agent.ClaudeResult {
+	return agent.ClaudeWithTimeout(claudePath, prompt, workDir)
+}
+
 // Executor runs a task by invoking the agent.
 type Executor struct {
 	store           *store.Store
 	feishuNotifier  FeishuNotifier
 	claudePath      string
 	workDir         string
+	runner          ClaudeRunner
 }
 
 func NewExecutor(s *store.Store, cfg *config.Config) *Executor {
-	return &Executor{store: s, claudePath: cfg.ClaudePath, workDir: cfg.WorkDir}
+	return &Executor{store: s, claudePath: cfg.ClaudePath, workDir: cfg.WorkDir, runner: &defaultRunner{}}
 }
 
 // SetFeishuNotifier sets the notifier for task completion events.
@@ -78,7 +91,7 @@ func (e *Executor) Run(taskID string) error {
 			"work_dir", e.workDir,
 		)
 
-		result := agent.ClaudeWithTimeout(e.claudePath, task.Prompt, e.workDir)
+		result := e.runner.Run(e.claudePath, task.Prompt, e.workDir)
 		endedAt := time.Now()
 		duration := endedAt.Sub(startedAt)
 
