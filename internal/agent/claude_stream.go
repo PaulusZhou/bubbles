@@ -11,22 +11,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
-	"time"
 )
-
-// StreamEvent represents a typed event from Claude's streaming output.
-type StreamEvent struct {
-	Type        string // "thinking" | "text" | "tool_use" | "tool_result" | "result" | "system"
-	Text        string
-	SessionID   string // populated on "system" events
-	ToolName    string
-	ToolUseID   string
-	RawContent  json.RawMessage
-	IsError     bool
-}
-
-// EventCallback is called for each typed event from Claude's streaming output.
-type EventCallback func(event StreamEvent) error
 
 // claudeSDKMessage represents a single event in Claude's stream-json output.
 type claudeSDKMessage struct {
@@ -339,7 +324,7 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, re
 
 // ClaudeStreamWithEventsTimeout executes ClaudeStreamWithEvents with a default 30-minute timeout.
 func ClaudeStreamWithEventsTimeout(claudePath, prompt, workDir, resumeSessionID string, cb EventCallback) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	return ClaudeStreamWithEvents(ctx, claudePath, prompt, workDir, resumeSessionID, cb)
 }

@@ -28,7 +28,7 @@ var logsCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 
 		data, _ := json.Marshal(resp.Result)

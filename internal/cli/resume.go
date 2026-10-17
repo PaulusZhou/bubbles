@@ -20,7 +20,7 @@ var resumeCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 		fmt.Printf("✓ Task %s resumed\n", args[0])
 		return nil

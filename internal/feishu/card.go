@@ -267,7 +267,7 @@ func BuildNewTaskCardJSON() string {
 	return string(bs)
 }
 
-// buildCreateTaskPrompt constructs a prompt for Claude to create a task via CLI.
+// buildCreateTaskPrompt constructs a prompt for the agent to create a task via CLI.
 func buildCreateTaskPrompt(taskName, cronExpr, prompt string) string {
 	if taskName == "" {
 		taskName = "定时任务"
@@ -282,10 +282,12 @@ bubbles create -n %q -s %q -p %q
 
 // --- Streaming card state ---
 
-// cardState accumulates thinking and final text for a card stream.
+// cardState accumulates thinking, streaming text, and final text for a card stream.
 type cardState struct {
 	mu          sync.Mutex
+	agentName   string // display name for card headers, e.g. "Claude Code" / "Pi"
 	thinking    strings.Builder
+	streamText  strings.Builder
 	finalText   strings.Builder
 	gotResult   bool
 	extraBodies []string // extra card bodies when content is split
@@ -300,8 +302,11 @@ const (
 	feishuMaxCardBytes = 30000
 )
 
-func newCardState() *cardState {
-	return &cardState{}
+func newCardState(agentName string) *cardState {
+	if agentName == "" {
+		agentName = "Claude Code"
+	}
+	return &cardState{agentName: agentName}
 }
 
 func (s *cardState) SetThinking(text string) {
@@ -309,6 +314,14 @@ func (s *cardState) SetThinking(text string) {
 	defer s.mu.Unlock()
 	s.thinking.Reset()
 	s.thinking.WriteString(text)
+}
+
+// SetText replaces the in-progress assistant text shown before the final result.
+func (s *cardState) SetText(text string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.streamText.Reset()
+	s.streamText.WriteString(text)
 }
 
 func (s *cardState) SetFinal(text string) {
@@ -408,22 +421,26 @@ func (s *cardState) buildCardWithPrefix(sessionName string) string {
 	if len(thinking) > cardThinkingMaxLen {
 		thinking = thinking[:cardThinkingMaxLen] + "\n\n... (省略)"
 	}
+	streamText := s.streamText.String()
+	if len(streamText) > cardThinkingMaxLen {
+		streamText = streamText[:cardThinkingMaxLen] + "\n\n... (省略)"
+	}
 	final := s.finalText.String()
 	hasFinal := s.finalText.Len() > 0
 
-	headerTitle := "🤖 Claude Code"
+	headerTitle := "🤖 " + s.agentName
 	if sessionName != "" {
-		headerTitle = "🤖 Claude Code — " + sessionName
+		headerTitle = "🤖 " + s.agentName + " — " + sessionName
 	}
 	if hasFinal {
 		if sessionName != "" {
-			headerTitle = "✅ Claude Code — " + sessionName
+			headerTitle = "✅ " + s.agentName + " — " + sessionName
 		} else {
-			headerTitle = "✅ Claude Code"
+			headerTitle = "✅ " + s.agentName
 		}
 	}
 
-	if !hasFinal && thinking == "" {
+	if !hasFinal && thinking == "" && streamText == "" {
 		thinking = "开始执行任务，思考中..."
 	}
 
@@ -432,6 +449,12 @@ func (s *cardState) buildCardWithPrefix(sessionName string) string {
 		elements = append(elements, map[string]interface{}{
 			"tag":     "markdown",
 			"content": "💭 **思考过程**\n\n" + thinking,
+		})
+	}
+	if !hasFinal && streamText != "" {
+		elements = append(elements, map[string]interface{}{
+			"tag":     "markdown",
+			"content": "💬 **回复中**\n\n" + streamText,
 		})
 	}
 
@@ -494,9 +517,9 @@ func (s *cardState) buildExtraCardsWithPrefix(sessionName string) []string {
 	extras := s.extraBodies
 	s.extraBodies = nil
 
-	title := "✅ Claude Code (续)"
+	title := "✅ " + s.agentName + " (续)"
 	if sessionName != "" {
-		title = fmt.Sprintf("✅ Claude Code — %s (续)", sessionName)
+		title = fmt.Sprintf("✅ %s — %s (续)", s.agentName, sessionName)
 	}
 	cards := make([]string, 0, len(extras))
 	for _, body := range extras {

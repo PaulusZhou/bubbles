@@ -20,7 +20,7 @@ var runCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 		fmt.Printf("✓ Task %s triggered\n", args[0])
 		return nil

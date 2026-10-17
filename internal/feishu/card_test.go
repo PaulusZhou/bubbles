@@ -101,7 +101,7 @@ func TestSplitCardBodies_TablesAndSizeExceeded(t *testing.T) {
 }
 
 func TestBuildExtraCards(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetThinking("thinking...")
 	state.SetFinal(buildTestContent(10))
 
@@ -268,7 +268,7 @@ func containsHelper(s, substr string) bool {
 // --- cardState tests ---
 
 func TestCardState_SetThinking(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetThinking("thinking text")
 
 	card := state.BuildCard()
@@ -281,7 +281,7 @@ func TestCardState_SetThinking(t *testing.T) {
 }
 
 func TestCardState_SetFinal(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetFinal("final result")
 
 	card := state.BuildCard()
@@ -294,7 +294,7 @@ func TestCardState_SetFinal(t *testing.T) {
 }
 
 func TestCardState_ThinkingThenFinal(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetThinking("step 1 thinking")
 	state.SetFinal("the answer")
 
@@ -308,7 +308,7 @@ func TestCardState_ThinkingThenFinal(t *testing.T) {
 }
 
 func TestCardState_NoContent(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	card := state.BuildCard()
 
 	// Should have default thinking placeholder
@@ -318,7 +318,7 @@ func TestCardState_NoContent(t *testing.T) {
 }
 
 func TestCardState_ThinkingMaxLen(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 
 	// Create thinking text that exceeds cardThinkingMaxLen
 	longThinking := ""
@@ -337,7 +337,7 @@ func TestCardState_ThinkingMaxLen(t *testing.T) {
 }
 
 func TestCardState_ExtraCards(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetFinal(buildTestContent(20)) // Many tables
 
 	state.BuildCard() // This should populate extraBodies
@@ -355,7 +355,7 @@ func TestCardState_ExtraCards(t *testing.T) {
 }
 
 func TestCardState_BuildCardWithName(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetThinking("thinking...")
 
 	card := state.BuildCardWithName("My Session")
@@ -365,7 +365,7 @@ func TestCardState_BuildCardWithName(t *testing.T) {
 }
 
 func TestCardState_BuildCardWithEmptyName(t *testing.T) {
-	state := newCardState()
+	state := newCardState("Claude Code")
 	state.SetThinking("thinking...")
 
 	cardWithName := state.BuildCardWithName("")
@@ -391,11 +391,11 @@ func TestBuildTaskCardJSON_Empty(t *testing.T) {
 func TestBuildTaskCardJSON_WithCronTask(t *testing.T) {
 	summaries := []daemon.TaskSummary{
 		{
-			ID:       "task_1",
-			Name:     "daily check",
-			Schedule: "0 9 * * *",
+			ID:        "task_1",
+			Name:      "daily check",
+			Schedule:  "0 9 * * *",
 			NextRunAt: "2026-06-20 09:00",
-			Status:   "active",
+			Status:    "active",
 		},
 	}
 
@@ -417,10 +417,10 @@ func TestBuildTaskCardJSON_WithCronTask(t *testing.T) {
 func TestBuildTaskCardJSON_WithOneTimeTask(t *testing.T) {
 	summaries := []daemon.TaskSummary{
 		{
-			ID:      "task_2",
-			Name:    "one-off",
-			RunAt:   "2026-06-20 14:30",
-			Status:  "active",
+			ID:     "task_2",
+			Name:   "one-off",
+			RunAt:  "2026-06-20 14:30",
+			Status: "active",
 		},
 	}
 

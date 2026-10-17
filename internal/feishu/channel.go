@@ -21,15 +21,15 @@ import (
 	"github.com/pauluszhou/bubbles/internal/daemon"
 )
 
-// ChatSession tracks a single Claude conversation within a Feishu chat.
+// ChatSession tracks a single agent conversation within a Feishu chat.
 type ChatSession struct {
-	key          string    // unique key, e.g. "s1", "s2"
-	name         string    // display name, e.g. "会话 1" or user-provided
-	claudeSID    string    // Claude session ID for --resume
-	firstMessage string    // user's first message in this session (for display)
+	key          string // unique key, e.g. "s1", "s2"
+	name         string // display name, e.g. "会话 1" or user-provided
+	agentSID     string // agent session ID for --resume/--session
+	firstMessage string // user's first message in this session (for display)
 	created      time.Time
 	lastActive   time.Time
-	sem          chan struct{}     // capacity-1 semaphore to serialize messages within this session
+	sem          chan struct{}      // capacity-1 semaphore to serialize messages within this session
 	cancelFunc   context.CancelFunc // cancel the in-flight processMessage goroutine, nil when idle
 }
 
@@ -54,6 +54,7 @@ type CommandHandler func(ctx context.Context, ch types.Channel, msg *types.Norma
 type FeishuChannel struct {
 	ch            types.Channel
 	cfg           *config.Config
+	agentClient   *agent.Client
 	commands      map[string]CommandHandler // prefix -> handler
 	defaultChatID string
 	scheduler     *daemon.Scheduler // for direct task operations on card callbacks
@@ -88,6 +89,7 @@ func New(cfg *config.Config) *FeishuChannel {
 	return &FeishuChannel{
 		ch:            ch,
 		cfg:           cfg,
+		agentClient:   agent.NewClient(cfg.Agent, cfg.AgentBinary(), cfg.PiModel),
 		commands:      make(map[string]CommandHandler),
 		defaultChatID: cfg.FeishuChatID,
 		chatStates:    make(map[string]*chatState),
@@ -180,7 +182,7 @@ func (f *FeishuChannel) getOrCreateActiveSession(chatID string) *ChatSession {
 	return s
 }
 
-// getResumeSessionID returns the Claude session ID for a session, or "" if expired/not found.
+// getResumeSessionID returns the agent session ID for a session, or "" if expired/not found.
 func (f *FeishuChannel) getResumeSessionID(chatID, sessionKey string) string {
 	cs := f.getChatState(chatID)
 	cs.mu.Lock()
@@ -194,18 +196,18 @@ func (f *FeishuChannel) getResumeSessionID(chatID, sessionKey string) string {
 		slog.Info("feishu: session expired", "chat_id", chatID, "session_key", sessionKey)
 		return ""
 	}
-	return s.claudeSID
+	return s.agentSID
 }
 
-// updateSession stores or updates the Claude session ID for a session.
-func (f *FeishuChannel) updateSession(chatID, sessionKey, claudeSID string) {
+// updateSession stores or updates the agent session ID for a session.
+func (f *FeishuChannel) updateSession(chatID, sessionKey, agentSID string) {
 	cs := f.getChatState(chatID)
 	cs.mu.Lock()
 	defer cs.mu.Unlock()
 	if s, ok := cs.sessions[sessionKey]; ok {
-		s.claudeSID = claudeSID
+		s.agentSID = agentSID
 		s.lastActive = time.Now()
-		slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "claude_sid", claudeSID)
+		slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "agent_sid", agentSID)
 	}
 }
 
@@ -278,8 +280,8 @@ func (f *FeishuChannel) CloseSession(chatID, sessionKey string) error {
 	return nil
 }
 
-// StopActiveSession cancels the in-flight Claude stream for the active session.
-// The session and its claudeSID are preserved so the next message can --resume.
+// StopActiveSession cancels the in-flight agent stream for the active session.
+// The session and its agentSID are preserved so the next message can --resume.
 func (f *FeishuChannel) StopActiveSession(chatID string) error {
 	cs := f.getChatState(chatID)
 	cs.mu.Lock()
@@ -369,13 +371,13 @@ func truncateRunes(s string, n int) string {
 	return string(runes[:n]) + "…"
 }
 
-// processMessage handles a single message with Claude streaming in its own goroutine.
+// processMessage handles a single message with agent streaming in its own goroutine.
 func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sessionKey string) {
 	chatID := msg.ChatID
 	cs := f.getChatState(chatID)
 
 	// Create a cancellable child context and register the cancel func on the session.
-	// /stop calls this to abort the in-flight Claude stream while preserving claudeSID.
+	// /stop calls this to abort the in-flight agent stream while preserving agentSID.
 	streamCtx, streamCancel := context.WithCancel(ctx)
 	cs.mu.Lock()
 	if s, ok := cs.sessions[sessionKey]; ok {
@@ -416,7 +418,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 	}
 	cs.mu.Unlock()
 
-	state := newCardState()
+	state := newCardState(f.agentClient.DisplayName())
 
 	streamCtrl, err := ch.Stream(streamCtx, &types.SendInput{
 		ChatID:         chatID,
@@ -428,7 +430,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 		return
 	}
 
-	err = agent.ClaudeStreamWithEvents(streamCtx, f.cfg.ClaudePath, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
+	err = f.agentClient.StreamWithEvents(streamCtx, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
 		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
 			if len(event.Text) > 150 {
 				return event.Text[:150]
@@ -440,14 +442,16 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 			if event.SessionID != "" {
 				cs.mu.Lock()
 				if s, ok := cs.sessions[sessionKey]; ok {
-					s.claudeSID = event.SessionID
+					s.agentSID = event.SessionID
 					s.lastActive = time.Now()
-					slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "claude_sid", event.SessionID)
+					slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "agent_sid", event.SessionID)
 				}
 				cs.mu.Unlock()
 			}
 		case "thinking":
 			state.SetThinking(event.Text)
+		case "text":
+			state.SetText(event.Text)
 		case "result":
 			state.SetFinal(event.Text)
 			cs.mu.Lock()
@@ -466,7 +470,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 			slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
 			return
 		}
-		slog.Error("feishu: claude stream failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		slog.Error("feishu: agent stream failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
 		return
 	}
 
@@ -570,13 +574,13 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	}
 
 	// 非命令消息：获取活跃会话，在独立 goroutine 中处理
-	// 同一会话的消息串行执行（保护 claudeSID 链），不同会话并发
+	// 同一会话的消息串行执行（保护 agentSID 链），不同会话并发
 	activeSession := f.getOrCreateActiveSession(msg.ChatID)
 	sessionKey := activeSession.key
 	sem := activeSession.sem
 
 	// Use Background context because this goroutine outlives the message handler.
-	// The 35-minute timeout prevents runaway Claude sessions.
+	// The 35-minute timeout prevents runaway agent sessions.
 	msgCtx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
 	go func() {
 		defer cancel()
@@ -774,20 +778,20 @@ func (f *FeishuChannel) handleCreateTaskAction(ctx context.Context, event *types
 		"chat_id", event.ChatID,
 	)
 
-	claudePrompt := buildCreateTaskPrompt("", cronExpr, prompt)
+	agentPrompt := buildCreateTaskPrompt("", cronExpr, prompt)
 
-	// Run Claude asynchronously so we can return immediately (Feishu card action has ~5s timeout)
-	go f.runCreateTaskStream(event.ChatID, claudePrompt)
+	// Run the agent asynchronously so we can return immediately (Feishu card action has ~5s timeout)
+	go f.runCreateTaskStream(event.ChatID, agentPrompt)
 
 	return nil
 }
 
-// runCreateTaskStream executes Claude in the background and streams results via card update.
-func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
+// runCreateTaskStream executes the agent in the background and streams results via card update.
+func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
 	defer cancel()
 
-	state := newCardState()
+	state := newCardState(f.agentClient.DisplayName())
 	streamCtrl, err := f.ch.Stream(ctx, &types.SendInput{
 		ChatID: chatID,
 		Card:   state.BuildCard(),
@@ -797,10 +801,12 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 		return
 	}
 
-	err = agent.ClaudeStreamWithEventsTimeout(f.cfg.ClaudePath, claudePrompt, f.cfg.WorkDir, "", func(event agent.StreamEvent) error {
+	err = f.agentClient.StreamWithEventsTimeout(agentPrompt, f.cfg.WorkDir, "", func(event agent.StreamEvent) error {
 		switch event.Type {
 		case "thinking":
 			state.SetThinking(event.Text)
+		case "text":
+			state.SetText(event.Text)
 		case "result":
 			state.SetFinal(event.Text)
 		}
@@ -810,7 +816,7 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, claudePrompt string) {
 	streamCtrl.Close(ctx)
 
 	if err != nil {
-		slog.Error("feishu: claude stream failed for create task", "chat_id", chatID, "error", err)
+		slog.Error("feishu: agent stream failed for create task", "chat_id", chatID, "error", err)
 		return
 	}
 

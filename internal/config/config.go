@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,7 +23,10 @@ type Config struct {
 	FeishuAppID     string `yaml:"feishu_app_id"`
 	FeishuAppSecret string `yaml:"feishu_app_secret"`
 	FeishuChatID    string `yaml:"feishu_chat_id"`
-	ClaudePath      string `yaml:"claude_path"`
+	Agent           string `yaml:"agent"`       // "claude" (default) or "pi"
+	ClaudePath      string `yaml:"claude_path"` // claude CLI path (agent: claude)
+	PiPath          string `yaml:"pi_path"`     // pi CLI path (agent: pi)
+	PiModel         string `yaml:"pi_model"`    // optional model override passed to pi --model
 	DataDir         string `yaml:"data_dir"`
 	WorkDir         string `yaml:"work_dir"`
 }
@@ -50,8 +54,14 @@ func Load() (*Config, error) {
 	if cfg.DataDir == "" {
 		cfg.DataDir = DefaultDataDir()
 	}
+	if cfg.Agent == "" {
+		cfg.Agent = "claude"
+	}
 	if cfg.ClaudePath == "" {
 		cfg.ClaudePath = "claude"
+	}
+	if cfg.PiPath == "" {
+		cfg.PiPath = "pi"
 	}
 
 	// Environment variable overrides
@@ -61,8 +71,17 @@ func Load() (*Config, error) {
 	if v := os.Getenv("FEISHU_APP_SECRET"); v != "" {
 		cfg.FeishuAppSecret = v
 	}
+	if v := os.Getenv("BUBBLES_AGENT"); v != "" {
+		cfg.Agent = v
+	}
 	if v := os.Getenv("CLAUDE_PATH"); v != "" {
 		cfg.ClaudePath = v
+	}
+	if v := os.Getenv("PI_PATH"); v != "" {
+		cfg.PiPath = v
+	}
+	if v := os.Getenv("BUBBLES_PI_MODEL"); v != "" {
+		cfg.PiModel = v
 	}
 	if v := os.Getenv("BUBBLES_DATA_DIR"); v != "" {
 		cfg.DataDir = v
@@ -72,8 +91,23 @@ func Load() (*Config, error) {
 	if cfg.WorkDir == "" {
 		return nil, fmt.Errorf("work_dir is required in %s", path)
 	}
+	cfg.Agent = strings.ToLower(strings.TrimSpace(cfg.Agent))
+	switch cfg.Agent {
+	case "claude", "pi":
+		// ok
+	default:
+		return nil, fmt.Errorf("agent must be \"claude\" or \"pi\", got %q", cfg.Agent)
+	}
 
 	return cfg, nil
+}
+
+// AgentBinary returns the CLI path for the configured agent.
+func (c *Config) AgentBinary() string {
+	if c.Agent == "pi" {
+		return c.PiPath
+	}
+	return c.ClaudePath
 }
 
 // DBPath returns the path to the SQLite database file.

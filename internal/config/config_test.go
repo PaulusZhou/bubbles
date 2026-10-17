@@ -149,3 +149,18 @@ func TestConfig_Fields(t *testing.T) {
 		t.Errorf("DBPath = %q", cfg.DBPath())
 	}
 }
+
+func TestConfig_AgentBinary(t *testing.T) {
+	cfg := &Config{
+		Agent:      "",
+		ClaudePath: "/usr/bin/claude",
+		PiPath:     "/usr/bin/pi",
+	}
+	if got := cfg.AgentBinary(); got != "/usr/bin/claude" {
+		t.Errorf("AgentBinary() with empty agent = %q, want claude path", got)
+	}
+	cfg.Agent = "pi"
+	if got := cfg.AgentBinary(); got != "/usr/bin/pi" {
+		t.Errorf("AgentBinary() with pi agent = %q, want pi path", got)
+	}
+}

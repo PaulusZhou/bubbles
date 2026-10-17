@@ -10,10 +10,10 @@ import (
 )
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete <task-id>",
-	Short: "删除任务",
+	Use:     "delete <task-id>",
+	Short:   "删除任务",
 	Aliases: []string{"rm", "del"},
-	Args:  cobra.ExactArgs(1),
+	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := ipc.NewClient(daemon.SocketPath())
 		resp, err := client.Call(ipc.MethodTaskDelete, ipc.TaskIDParams{ID: args[0]})
@@ -21,7 +21,7 @@ var deleteCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 		fmt.Printf("✓ Task %s deleted\n", args[0])
 		return nil

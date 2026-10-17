@@ -25,7 +25,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
-	slog.Info("bubblesd starting", "data_dir", cfg.DataDir, "work_dir", cfg.WorkDir, "feishu_app_id", cfg.FeishuAppID, "claude_path", cfg.ClaudePath)
+	slog.Info("bubblesd starting", "data_dir", cfg.DataDir, "work_dir", cfg.WorkDir, "feishu_app_id", cfg.FeishuAppID, "agent", cfg.Agent, "agent_path", cfg.AgentBinary())
 
 	// 确保数据目录存在
 	if err := os.MkdirAll(cfg.DataDir, 0755); err != nil {
@@ -124,7 +124,7 @@ func main() {
 				return sendErr
 			})
 
-			// 注册 /stop 命令：停止当前活跃会话的 Claude 流，保留会话 ID 以便下次继续
+			// 注册 /stop 命令：停止当前活跃会话的 agent 流，保留会话 ID 以便下次继续
 			fch.RegisterCommand("/stop", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 				err := fch.StopActiveSession(msg.ChatID)
 				var reply string
@@ -167,7 +167,7 @@ func main() {
 					"• /help — 显示此帮助信息\n\n" +
 					"---\n" +
 					"💡 **使用提示**\n" +
-					"• 直接发送消息即可与 Claude 对话\n" +
+					"• 直接发送消息即可与 AI 助手对话\n" +
 					"• 群聊中需要 @机器人 才能触发命令\n" +
 					"• 会话空闲超过 60 分钟会自动清理"
 				_, sendErr := ch.Send(ctx, &types.SendInput{

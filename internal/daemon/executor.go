@@ -13,29 +13,37 @@ import (
 	"github.com/pauluszhou/bubbles/internal/store"
 )
 
-// ClaudeRunner abstracts the Claude CLI invocation, allowing mock injection for testing.
-type ClaudeRunner interface {
-	Run(claudePath, prompt, workDir string) agent.ClaudeResult
+// Runner abstracts the agent invocation, allowing mock injection for testing.
+type Runner interface {
+	Run(prompt, workDir string) agent.Result
 }
 
-// defaultRunner delegates to agent.ClaudeWithTimeout.
-type defaultRunner struct{}
+// clientRunner delegates to an agent.Client.
+type clientRunner struct {
+	client *agent.Client
+}
 
-func (r *defaultRunner) Run(claudePath, prompt, workDir string) agent.ClaudeResult {
-	return agent.ClaudeWithTimeout(claudePath, prompt, workDir)
+func (r *clientRunner) Run(prompt, workDir string) agent.Result {
+	return r.client.RunWithTimeout(prompt, workDir)
 }
 
 // Executor runs a task by invoking the agent.
 type Executor struct {
-	store           *store.Store
-	feishuNotifier  FeishuNotifier
-	claudePath      string
-	workDir         string
-	runner          ClaudeRunner
+	store          *store.Store
+	feishuNotifier FeishuNotifier
+	agentName      string
+	workDir        string
+	runner         Runner
 }
 
 func NewExecutor(s *store.Store, cfg *config.Config) *Executor {
-	return &Executor{store: s, claudePath: cfg.ClaudePath, workDir: cfg.WorkDir, runner: &defaultRunner{}}
+	client := agent.NewClient(cfg.Agent, cfg.AgentBinary(), cfg.PiModel)
+	return &Executor{
+		store:     s,
+		agentName: client.DisplayName(),
+		workDir:   cfg.WorkDir,
+		runner:    &clientRunner{client: client},
+	}
 }
 
 // SetFeishuNotifier sets the notifier for task completion events.
@@ -85,13 +93,14 @@ func (e *Executor) Run(taskID string) error {
 	slog.Info("executor: task last_run_at updated", "task_id", taskID, "last_run_at", startedAt)
 
 	go func() {
-		slog.Info("executor: invoking claude agent",
+		slog.Info("executor: invoking agent",
 			"task_id", taskID,
 			"exec_id", execID,
+			"agent", e.agentName,
 			"work_dir", e.workDir,
 		)
 
-		result := e.runner.Run(e.claudePath, task.Prompt, e.workDir)
+		result := e.runner.Run(task.Prompt, e.workDir)
 		endedAt := time.Now()
 		duration := endedAt.Sub(startedAt)
 
@@ -100,14 +109,14 @@ func (e *Executor) Run(taskID string) error {
 		if result.Error != nil {
 			status = "failed"
 			output = fmt.Sprintf("%s\nError: %v", output, result.Error)
-			slog.Error("executor: claude agent execution failed",
+			slog.Error("executor: agent execution failed",
 				"task_id", taskID,
 				"exec_id", execID,
 				"duration", duration,
 				"error", result.Error,
 			)
 		} else {
-			slog.Info("executor: claude agent execution succeeded",
+			slog.Info("executor: agent execution succeeded",
 				"task_id", taskID,
 				"exec_id", execID,
 				"duration", duration,

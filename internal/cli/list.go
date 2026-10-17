@@ -11,8 +11,8 @@ import (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "列出所有任务",
+	Use:     "list",
+	Short:   "列出所有任务",
 	Aliases: []string{"ls"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		client := ipc.NewClient(daemon.SocketPath())
@@ -21,7 +21,7 @@ var listCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 
 		data, _ := json.Marshal(resp.Result)

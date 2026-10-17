@@ -59,25 +59,25 @@ func TestClaudeWithTimeout_InvalidCommand(t *testing.T) {
 	}
 }
 
-func TestClaudeResult_Fields(t *testing.T) {
+func TestResult_Fields(t *testing.T) {
 	tests := []struct {
 		name    string
-		result  ClaudeResult
+		result  Result
 		wantErr bool
 	}{
 		{
 			name:    "success",
-			result:  ClaudeResult{Output: "ok"},
+			result:  Result{Output: "ok"},
 			wantErr: false,
 		},
 		{
 			name:    "error",
-			result:  ClaudeResult{Output: "fail", Error: context.DeadlineExceeded},
+			result:  Result{Output: "fail", Error: context.DeadlineExceeded},
 			wantErr: true,
 		},
 		{
 			name:    "empty",
-			result:  ClaudeResult{},
+			result:  Result{},
 			wantErr: false,
 		},
 	}

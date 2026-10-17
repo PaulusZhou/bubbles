@@ -6,16 +6,10 @@ import (
 	"log/slog"
 	"os"
 	"os/exec"
-	"time"
 )
 
-type ClaudeResult struct {
-	Output string
-	Error  error
-}
-
 // Claude executes a prompt via the claude CLI in non-interactive mode.
-func Claude(ctx context.Context, claudePath, prompt, workDir string) ClaudeResult {
+func Claude(ctx context.Context, claudePath, prompt, workDir string) Result {
 	args := []string{"--print", "-p", prompt, "--dangerously-skip-permissions"}
 
 	cmd := exec.CommandContext(ctx, claudePath, args...)
@@ -32,20 +26,20 @@ func Claude(ctx context.Context, claudePath, prompt, workDir string) ClaudeResul
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return ClaudeResult{
+		return Result{
 			Output: string(output),
 			Error:  fmt.Errorf("claude command failed: %w", err),
 		}
 	}
 
-	return ClaudeResult{
+	return Result{
 		Output: string(output),
 	}
 }
 
 // ClaudeWithTimeout executes a prompt with a default 30-minute timeout.
-func ClaudeWithTimeout(claudePath, prompt, workDir string) ClaudeResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
+func ClaudeWithTimeout(claudePath, prompt, workDir string) Result {
+	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 	return Claude(ctx, claudePath, prompt, workDir)
 }

@@ -1,6 +1,6 @@
 # Bubbles
 
-飞书与Claude Code的交互框架，支持定时任务调度、指定时间任务、任务完成通知等功能。
+飞书与 AI 编程代理（Claude Code / pi）的交互框架，支持定时任务调度、指定时间任务、任务完成通知等功能。
 
 ## 特性
 
@@ -20,7 +20,7 @@ make install  # 安装到 /usr/local/bin/，并启动服务
 ```
 
 前置条件：
-- [Claude Code CLI](https://claude.ai/code) — `claude` 命令需在 PATH 中
+- [Claude Code CLI](https://claude.ai/code)（`agent: claude`）或 [pi](https://pi.dev)（`agent: pi`）— 对应 CLI 需在 PATH 中
 - CGO 编译环境（SQLite 需要）
 
 ## 快速开始
@@ -30,8 +30,11 @@ make install  # 安装到 /usr/local/bin/，并启动服务
 ```bash
 mkdir -p ~/.bubbles
 cat > ~/.bubbles/config.yaml << 'EOF'
-work_dir: /path/to/your/project   # 必填：Claude 的工作目录
+work_dir: /path/to/your/project   # 必填：agent 的工作目录
+# agent: claude                    # 可选：后端代理，"claude"（默认）或 "pi"
 # claude_path: claude              # 可选：Claude CLI 路径，默认 "claude"
+# pi_path: pi                      # 可选：pi CLI 路径，默认 "pi"（agent: pi 时使用）
+# pi_model: sonnet                 # 可选：传给 pi --model 的模型选择
 # data_dir: ~/.bubbles             # 可选：数据目录，默认 ~/.bubbles
 
 # 可选：飞书机器人配置
@@ -41,7 +44,7 @@ work_dir: /path/to/your/project   # 必填：Claude 的工作目录
 EOF
 ```
 
-环境变量可覆盖配置文件：`FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`CLAUDE_PATH`、`BUBBLES_DATA_DIR`。
+环境变量可覆盖配置文件：`FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`BUBBLES_AGENT`、`CLAUDE_PATH`、`PI_PATH`、`BUBBLES_PI_MODEL`、`BUBBLES_DATA_DIR`。
 
 ### 2. 启动守护进程
 
@@ -82,11 +85,11 @@ bubbles logs <task-id> --last   # 查看最近一次
 
 ## 飞书机器人
 
-配置 `feishu_app_id` 和 `feishu_app_secret` 后，daemon 启动时自动连接飞书。用户可以在飞书中直接与 Claude 对话，支持流式卡片回复和会话上下文保持。
+配置 `feishu_app_id` 和 `feishu_app_secret` 后，daemon 启动时自动连接飞书。用户可以在飞书中直接与 AI 助手对话，支持流式卡片回复和会话上下文保持。
 
 ### 对话交互
 
-在飞书中 @机器人 发送任意消息，Claude 会以流式卡片形式回复，实时显示思考过程和最终结果。同一聊天窗口内的连续消息会自动复用 Claude 会话（30 分钟无活动后过期）。
+在飞书中 @机器人 发送任意消息，AI 助手会以流式卡片形式回复，实时显示思考过程和最终结果。同一聊天窗口内的连续消息会自动复用代理会话（30 分钟无活动后过期）。
 
 ### 飞书命令
 
@@ -94,7 +97,7 @@ bubbles logs <task-id> --last   # 查看最近一次
 |------|------|
 | `/cron` | 查看所有任务列表，带暂停/恢复/删除按钮 |
 | `/cron-new` | 打开表单创建定时任务（选择频率、日期、时间） |
-| `/new` | 重置当前会话，下次消息开启新 Claude 会话 |
+| `/new` | 重置当前会话，下次消息开启新 AI 会话 |
 
 ### 任务完成通知
 
@@ -103,10 +106,10 @@ bubbles logs <task-id> --last   # 查看最近一次
 ## 架构
 
 ```
-┌─────────┐  Unix Socket  ┌──────────────┐  exec  ┌─────────────┐
-│ bubbles  │ ◄──────────► │  bubblesd    │ ─────► │ Claude Code │
-│  (CLI)   │   JSON-RPC   │  (Daemon)    │        │             │
-└─────────┘              └──────┬───────┘        └─────────────┘
+┌─────────┐  Unix Socket  ┌──────────────┐  exec  ┌──────────────┐
+│ bubbles  │ ◄──────────► │  bubblesd    │ ─────► │ Claude Code/ │
+│  (CLI)   │   JSON-RPC   │  (Daemon)    │        │     pi       │
+└─────────┘              └──────┬───────┘        └──────────────┘
                                 │
                           ┌─────┴─────┐
                           ▼           ▼
@@ -121,8 +124,8 @@ bubbles logs <task-id> --last   # 查看最近一次
 
 ### 两种执行路径
 
-1. **定时任务** — 通过 CLI 或飞书表单创建，由调度器在指定时间触发。同步执行 `claude --print`，输出写入 SQLite。
-2. **飞书对话** — 消息直接走流式管道（`stream-json`），实时推送卡片更新，自动审批所有工具权限。
+1. **定时任务** — 通过 CLI 或飞书表单创建，由调度器在指定时间触发。同步执行 `claude --print` 或 `pi --print`，输出写入 SQLite。
+2. **飞书对话** — 消息直接走流式管道（claude 的 `stream-json` / pi 的 `--mode json`），实时推送卡片更新。Claude 后端自动审批所有工具权限；pi 后端工具默认直接执行，项目资源通过 `--approve` 信任加载。
 
 ## Cron 表达式
 

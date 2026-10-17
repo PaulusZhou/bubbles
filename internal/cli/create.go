@@ -44,7 +44,7 @@ var createCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 
 		data, _ := json.Marshal(resp.Result)
@@ -67,7 +67,7 @@ var createCmd = &cobra.Command{
 
 func init() {
 	createCmd.Flags().StringVarP(&createName, "name", "n", "", "任务名称")
-	createCmd.Flags().StringVarP(&createPrompt, "prompt", "p", "", "发送给 Claude Code 的 prompt（必填）")
+	createCmd.Flags().StringVarP(&createPrompt, "prompt", "p", "", "发送给 AI 代理的 prompt（必填）")
 	createCmd.Flags().StringVarP(&createSchedule, "schedule", "s", "", "cron 表达式（如 '0 9 * * *'）")
 	createCmd.Flags().StringVarP(&createRunAt, "at", "a", "", "一次性任务执行时间（格式：YYYY-MM-DDTHH:MM:SS，如 '2026-06-13T14:59:00'）")
 

@@ -12,13 +12,13 @@ import (
 	"github.com/pauluszhou/bubbles/internal/store"
 )
 
-// mockRunner implements ClaudeRunner for testing.
+// mockRunner implements Runner for testing.
 type mockRunner struct {
-	result agent.ClaudeResult
+	result agent.Result
 	calls  int
 }
 
-func (r *mockRunner) Run(claudePath, prompt, workDir string) agent.ClaudeResult {
+func (r *mockRunner) Run(prompt, workDir string) agent.Result {
 	r.calls++
 	return r.result
 }
@@ -47,13 +47,13 @@ func newTestExecutor(t *testing.T) (*Executor, *store.Store, *mockRunner, func()
 		WorkDir:    dir,
 	}
 	runner := &mockRunner{
-		result: agent.ClaudeResult{Output: "test output"},
+		result: agent.Result{Output: "test output"},
 	}
 	executor := &Executor{
-		store:      s,
-		claudePath: cfg.ClaudePath,
-		workDir:    cfg.WorkDir,
-		runner:     runner,
+		store:     s,
+		agentName: "Claude Code",
+		workDir:   cfg.WorkDir,
+		runner:    runner,
 	}
 	cleanup := func() { s.Close() }
 	return executor, s, runner, cleanup
@@ -114,11 +114,11 @@ func TestExecutor_Run_Success(t *testing.T) {
 	}
 }
 
-func TestExecutor_Run_ClaudeFailed(t *testing.T) {
+func TestExecutor_Run_AgentFailed(t *testing.T) {
 	executor, s, runner, cleanup := newTestExecutor(t)
 	defer cleanup()
 
-	runner.result = agent.ClaudeResult{
+	runner.result = agent.Result{
 		Output: "partial output",
 		Error:  fmt.Errorf("claude crashed"),
 	}

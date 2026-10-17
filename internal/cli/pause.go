@@ -20,7 +20,7 @@ var pauseCmd = &cobra.Command{
 			return err
 		}
 		if resp.Error != "" {
-			return fmt.Errorf(resp.Error)
+			return fmt.Errorf("%s", resp.Error)
 		}
 		fmt.Printf("✓ Task %s paused\n", args[0])
 		return nil
