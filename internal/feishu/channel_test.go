@@ -99,8 +99,8 @@ func TestStripMentionPrefix_NotAMention(t *testing.T) {
 		want  string
 	}{
 		{"@user hello", "@user hello"},
-		{"@_user hello", "@_user hello"},       // missing digit
-		{"@_userX1 hello", "@_userX1 hello"},   // non-digit after _user_
+		{"@_user hello", "@_user hello"},     // missing digit
+		{"@_userX1 hello", "@_userX1 hello"}, // non-digit after _user_
 	}
 
 	for _, tt := range tests {

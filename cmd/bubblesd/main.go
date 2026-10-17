@@ -141,6 +141,11 @@ func main() {
 				return sendErr
 			})
 
+			// 注册 /refork 命令：列出历史提问，选择后从该问题重新生成回答
+			fch.RegisterCommand("/refork", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				return fch.HandleReforkCommand(ctx, ch, msg)
+			})
+
 			// 注册 /cron-new 命令：发送创建任务的表单卡片
 			fch.RegisterCommand("/cron-new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 				cardJSON := feishu.BuildNewTaskCardJSON()
@@ -159,7 +164,8 @@ func main() {
 					"**会话管理**\n" +
 					"• /new [名称] — 创建新会话并切换到该会话。可选指定会话名称，如 /new 代码审查\n" +
 					"• /sessions — 查看所有会话列表，可切换或关闭会话\n" +
-					"• /stop — 停止当前会话正在进行的任务，保留会话以便继续\n\n" +
+					"• /stop — 停止当前会话正在进行的任务，保留会话以便继续\n" +
+					"• /refork — 列出历史提问，选择一个从那里重新生成回答\n\n" +
 					"**任务管理**\n" +
 					"• /cron — 查看所有定时任务列表，支持暂停、恢复、删除操作\n" +
 					"• /cron-new — 创建新的定时任务，通过表单设置频率和任务描述\n\n" +
@@ -168,6 +174,7 @@ func main() {
 					"---\n" +
 					"💡 **使用提示**\n" +
 					"• 直接发送消息即可与 AI 助手对话\n" +
+					"• 最终回复卡片的 🔄 重新回答 按钮可重新生成当前回答\n" +
 					"• 群聊中需要 @机器人 才能触发命令\n" +
 					"• 会话空闲超过 60 分钟会自动清理"
 				_, sendErr := ch.Send(ctx, &types.SendInput{

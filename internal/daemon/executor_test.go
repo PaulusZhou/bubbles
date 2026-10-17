@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"sync"
 	"testing"
 	"time"
 
@@ -14,24 +15,58 @@ import (
 
 // mockRunner implements Runner for testing.
 type mockRunner struct {
+	mu     sync.Mutex
 	result agent.Result
 	calls  int
 }
 
 func (r *mockRunner) Run(prompt, workDir string) agent.Result {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	r.calls++
 	return r.result
 }
 
+func (r *mockRunner) callCount() int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.calls
+}
+
 // mockFeishuNotifier implements FeishuNotifier for testing.
 type mockFeishuNotifier struct {
+	mu          sync.Mutex
 	completions []TaskCompletion
+	texts       []string
 	returnErr   error
 }
 
 func (n *mockFeishuNotifier) NotifyTaskCompletion(ctx context.Context, completion TaskCompletion) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
 	n.completions = append(n.completions, completion)
 	return n.returnErr
+}
+
+func (n *mockFeishuNotifier) NotifyText(ctx context.Context, chatID, text string) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	n.texts = append(n.texts, text)
+	return n.returnErr
+}
+
+// completionList returns a snapshot of recorded completions.
+func (n *mockFeishuNotifier) completionList() []TaskCompletion {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return append([]TaskCompletion(nil), n.completions...)
+}
+
+// textList returns a snapshot of recorded texts.
+func (n *mockFeishuNotifier) textList() []string {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	return append([]string(nil), n.texts...)
 }
 
 func newTestExecutor(t *testing.T) (*Executor, *store.Store, *mockRunner, func()) {
@@ -91,8 +126,8 @@ func TestExecutor_Run_Success(t *testing.T) {
 	})
 
 	// Verify runner was called (after async completion)
-	if runner.calls != 1 {
-		t.Errorf("expected 1 runner call, got %d", runner.calls)
+	if runner.callCount() != 1 {
+		t.Errorf("expected 1 runner call, got %d", runner.callCount())
 	}
 
 	// Verify execution log
@@ -198,14 +233,15 @@ func TestExecutor_Run_WithFeishuNotifier(t *testing.T) {
 
 	// Wait for async goroutine to complete
 	waitForAsync(t, 5*time.Second, func() bool {
-		return len(notifier.completions) > 0
+		return len(notifier.completionList()) > 0
 	})
 
 	// Verify notification was sent
-	if len(notifier.completions) != 1 {
-		t.Fatalf("expected 1 notification, got %d", len(notifier.completions))
+	completions := notifier.completionList()
+	if len(completions) != 1 {
+		t.Fatalf("expected 1 notification, got %d", len(completions))
 	}
-	completion := notifier.completions[0]
+	completion := completions[0]
 	if completion.TaskID != "task_1" {
 		t.Errorf("TaskID = %q, want %q", completion.TaskID, "task_1")
 	}
@@ -236,12 +272,12 @@ func TestExecutor_Run_FeishuNotifierError(t *testing.T) {
 
 	// Wait for async goroutine to complete
 	waitForAsync(t, 5*time.Second, func() bool {
-		return len(notifier.completions) > 0
+		return len(notifier.completionList()) > 0
 	})
 
 	// Notification was attempted even though it failed
-	if len(notifier.completions) != 1 {
-		t.Fatalf("expected 1 notification attempt, got %d", len(notifier.completions))
+	if len(notifier.completionList()) != 1 {
+		t.Fatalf("expected 1 notification attempt, got %d", len(notifier.completionList()))
 	}
 }
 
@@ -264,7 +300,7 @@ func TestExecutor_Run_Concurrent(t *testing.T) {
 
 	// Wait for all to complete
 	waitForAsync(t, 10*time.Second, func() bool {
-		return runner.calls == 5
+		return runner.callCount() == 5
 	})
 
 	// Verify all execution logs

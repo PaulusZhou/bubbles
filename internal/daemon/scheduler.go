@@ -13,6 +13,7 @@ import (
 
 	"github.com/robfig/cron/v3"
 
+	"github.com/pauluszhou/bubbles/internal/agent"
 	"github.com/pauluszhou/bubbles/internal/config"
 	"github.com/pauluszhou/bubbles/internal/ipc"
 	"github.com/pauluszhou/bubbles/internal/model"
@@ -36,9 +37,10 @@ type TaskCompletion struct {
 	EndedAt   time.Time
 }
 
-// FeishuNotifier is an interface for sending task completion notifications to Feishu.
+// FeishuNotifier is an interface for sending notifications to Feishu.
 type FeishuNotifier interface {
 	NotifyTaskCompletion(ctx context.Context, completion TaskCompletion) error
+	NotifyText(ctx context.Context, chatID, text string) error
 }
 
 // TaskSummary holds formatted data for a single task, used by card UIs.
@@ -54,17 +56,17 @@ type TaskSummary struct {
 
 // Scheduler manages cron jobs and one-time tasks.
 type Scheduler struct {
-	cron            *cron.Cron
-	store           *store.Store
-	executor        *Executor
-	ipc             *ipc.Server
-	cfg             *config.Config
-	started         time.Time
-	entryMap        map[string]cron.EntryID // taskID -> cron entry ID
-	entryMapMu      sync.RWMutex           // protects entryMap
-	quit            chan struct{}           // signals goroutines to stop
-	feishuStopper   FeishuStopper
-	feishuNotifier  FeishuNotifier
+	cron           *cron.Cron
+	store          *store.Store
+	executor       *Executor
+	ipc            *ipc.Server
+	cfg            *config.Config
+	started        time.Time
+	entryMap       map[string]cron.EntryID // taskID -> cron entry ID
+	entryMapMu     sync.RWMutex            // protects entryMap
+	quit           chan struct{}           // signals goroutines to stop
+	feishuStopper  FeishuStopper
+	feishuNotifier FeishuNotifier
 }
 
 func NewScheduler(s *store.Store, cfg *config.Config) *Scheduler {
@@ -324,6 +326,9 @@ func (s *Scheduler) registerHandlers() {
 	s.ipc.Handle(ipc.MethodTaskRun, s.handleTaskRun)
 	s.ipc.Handle(ipc.MethodTaskLogs, s.handleTaskLogs)
 	s.ipc.Handle(ipc.MethodDaemonStatus, s.handleDaemonStatus)
+	s.ipc.Handle(ipc.MethodSessionStats, s.handleSessionStats)
+	s.ipc.Handle(ipc.MethodSessionExport, s.handleSessionExport)
+	s.ipc.Handle(ipc.MethodFeishuNotify, s.handleFeishuNotify)
 }
 
 func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
@@ -682,4 +687,65 @@ func (s *Scheduler) handleDaemonStatus(json.RawMessage) (interface{}, error) {
 		"uptime", result.Uptime,
 	)
 	return result, nil
+}
+
+// handleSessionStats returns token/cost statistics for a pi session.
+func (s *Scheduler) handleSessionStats(raw json.RawMessage) (interface{}, error) {
+	var p ipc.SessionParams
+	if err := json.Unmarshal(raw, &p); err != nil {
+		slog.Error("ipc: session.stats invalid params", "error", err)
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	slog.Info("ipc: session.stats received", "session_id", p.SessionID)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	stats, err := agent.PiSessionStats(ctx, s.cfg.PiPath, s.cfg.WorkDir, s.cfg.PiModel, p.SessionID)
+	if err != nil {
+		slog.Error("ipc: session.stats failed", "session_id", p.SessionID, "error", err)
+		return nil, err
+	}
+	return ipc.SessionStatsResult{SessionID: p.SessionID, Stats: stats}, nil
+}
+
+// handleSessionExport writes an HTML rendering of a pi session.
+func (s *Scheduler) handleSessionExport(raw json.RawMessage) (interface{}, error) {
+	var p ipc.SessionParams
+	if err := json.Unmarshal(raw, &p); err != nil {
+		slog.Error("ipc: session.export invalid params", "error", err)
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	slog.Info("ipc: session.export received", "session_id", p.SessionID, "path", p.Path)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+	path, err := agent.PiSessionExportHTML(ctx, s.cfg.PiPath, s.cfg.WorkDir, s.cfg.PiModel, p.SessionID, p.Path)
+	if err != nil {
+		slog.Error("ipc: session.export failed", "session_id", p.SessionID, "error", err)
+		return nil, err
+	}
+	return ipc.SessionExportResult{SessionID: p.SessionID, Path: path}, nil
+}
+
+// handleFeishuNotify sends a plain text message to a Feishu chat. Used by the
+// bubbles pi extension's feishu_notify tool.
+func (s *Scheduler) handleFeishuNotify(raw json.RawMessage) (interface{}, error) {
+	var p ipc.FeishuNotifyParams
+	if err := json.Unmarshal(raw, &p); err != nil {
+		slog.Error("ipc: feishu.notify invalid params", "error", err)
+		return nil, fmt.Errorf("invalid params: %w", err)
+	}
+	if p.Text == "" {
+		return nil, fmt.Errorf("text is required")
+	}
+	slog.Info("ipc: feishu.notify received", "chat_id", p.ChatID, "text_len", len(p.Text))
+
+	if s.feishuNotifier == nil {
+		return nil, fmt.Errorf("feishu channel is not configured")
+	}
+	if err := s.feishuNotifier.NotifyText(context.Background(), p.ChatID, p.Text); err != nil {
+		slog.Error("ipc: feishu.notify failed", "error", err)
+		return nil, err
+	}
+	return ipc.FeishuNotifyResult{Delivered: true}, nil
 }

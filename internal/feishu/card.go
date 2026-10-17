@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/pauluszhou/bubbles/internal/agent"
 	"github.com/pauluszhou/bubbles/internal/daemon"
 )
 
@@ -28,6 +29,49 @@ func taskButtonRow(buttons ...map[string]interface{}) map[string]interface{} {
 		"tag":     "column_set",
 		"columns": columns,
 	}
+}
+
+// BuildForkMessagesCard lists forkable user messages with a button to re-run
+// the conversation from each. Newest messages come first, at most maxForkRows.
+func BuildForkMessagesCard(messages []agent.ForkMessage, sessionKey string) string {
+	const maxForkRows = 5
+	start := 0
+	if len(messages) > maxForkRows {
+		start = len(messages) - maxForkRows
+	}
+	rows := messages[start:]
+
+	elements := []map[string]interface{}{
+		{"tag": "markdown", "content": "选择一个问题，重新生成它的回答（原回答会保留在分支历史中）"},
+	}
+	for i := len(rows) - 1; i >= 0; i-- {
+		m := rows[i]
+		text := truncateRunes(strings.ReplaceAll(m.Text, "\n", " "), 60)
+		elements = append(elements, map[string]interface{}{"tag": "markdown", "content": "> " + text})
+		value := map[string]string{"action": "refork", "session_key": sessionKey, "entry_id": m.EntryID}
+		elements = append(elements, taskButtonRow(map[string]interface{}{
+			"tag":       "button",
+			"text":      map[string]string{"tag": "plain_text", "content": "🔄 从这里重新回答"},
+			"type":      "default",
+			"value":     value,
+			"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+		}))
+	}
+
+	card := map[string]interface{}{
+		"schema": "2.0",
+		"header": map[string]interface{}{
+			"template": "blue",
+			"title":    map[string]interface{}{"tag": "plain_text", "content": "🔀 历史提问分支"},
+		},
+		"body": map[string]interface{}{"elements": elements},
+	}
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal fork messages card", "error", err)
+		return "{}"
+	}
+	return string(bs)
 }
 
 // taskButton creates a v2 card button with value for SDK callback compatibility.
@@ -283,6 +327,78 @@ bubbles create -n %q -s %q -p %q
 // --- Streaming card state ---
 
 // cardState accumulates thinking, streaming text, and final text for a card stream.
+// toolActivity records one tool invocation for the activity section of a card.
+type toolActivity struct {
+	id      string
+	name    string
+	summary string
+	status  string // "running" | "done" | "error"
+}
+
+// uiChoice is one button on a UI choice card (label shown, value answered).
+type uiChoice struct {
+	Label string
+	Value string
+}
+
+// uiChoiceButton creates a callback button answering a UI dialog request.
+func uiChoiceButton(label, requestID, choice string) map[string]interface{} {
+	value := map[string]string{"action": "ui_choice", "request_id": requestID, "choice": choice}
+	return map[string]interface{}{
+		"tag":       "button",
+		"text":      map[string]string{"tag": "plain_text", "content": label},
+		"type":      "default",
+		"value":     value,
+		"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+	}
+}
+
+// reanswerButton creates the "regenerate answer" button for a final card.
+func reanswerButton(sessionKey string) map[string]interface{} {
+	value := map[string]string{"action": "reanswer", "session_key": sessionKey}
+	return map[string]interface{}{
+		"tag":       "button",
+		"text":      map[string]string{"tag": "plain_text", "content": "🔄 重新回答"},
+		"type":      "default",
+		"value":     value,
+		"behaviors": []map[string]interface{}{{"type": "callback", "value": value}},
+	}
+}
+
+// BuildUIChoiceCard builds a card asking the user to approve an action or pick
+// an option on behalf of a pi extension UI dialog.
+func BuildUIChoiceCard(title, message, requestID string, choices []uiChoice) string {
+	if title == "" {
+		title = "需要确认"
+	}
+	message = truncateRunes(message, 1000)
+
+	var elements []map[string]interface{}
+	if message != "" {
+		elements = append(elements, map[string]interface{}{"tag": "markdown", "content": message})
+	}
+	buttons := make([]map[string]interface{}, 0, len(choices))
+	for _, c := range choices {
+		buttons = append(buttons, uiChoiceButton(truncateRunes(c.Label, 20), requestID, c.Value))
+	}
+	elements = append(elements, taskButtonRow(buttons...))
+
+	card := map[string]interface{}{
+		"schema": "2.0",
+		"header": map[string]interface{}{
+			"template": "orange",
+			"title":    map[string]interface{}{"tag": "plain_text", "content": "🔐 " + title},
+		},
+		"body": map[string]interface{}{"elements": elements},
+	}
+	bs, err := json.Marshal(card)
+	if err != nil {
+		slog.Error("feishu: failed to marshal ui choice card", "error", err)
+		return "{}"
+	}
+	return string(bs)
+}
+
 type cardState struct {
 	mu          sync.Mutex
 	agentName   string // display name for card headers, e.g. "Claude Code" / "Pi"
@@ -291,10 +407,15 @@ type cardState struct {
 	finalText   strings.Builder
 	gotResult   bool
 	extraBodies []string // extra card bodies when content is split
+	tools       []toolActivity
+	toolIndex   map[string]int // tool use ID -> index in tools
+	sessionKey  string         // chat session key; enables the reanswer button
 }
 
 const (
 	cardThinkingMaxLen = 8000
+	// maxToolLines bounds the tool activity list rendered on a card.
+	maxToolLines = 8
 	// feishuMaxTables is the maximum number of table components allowed per Feishu card.
 	// Exceeding this limit triggers API error 11310 ("card table number over limit").
 	feishuMaxTables = 5
@@ -329,6 +450,74 @@ func (s *cardState) SetFinal(text string) {
 	defer s.mu.Unlock()
 	s.gotResult = true
 	s.finalText.WriteString(text)
+}
+
+// SetSessionKey enables the "reanswer" action button on final cards.
+func (s *cardState) SetSessionKey(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sessionKey = key
+}
+
+// ToolStarted records a tool invocation in the activity list. A non-empty id
+// lets ToolFinished correlate the completion later.
+func (s *cardState) ToolStarted(id, name, summary string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.toolIndex == nil {
+		s.toolIndex = map[string]int{}
+	}
+	if name == "" {
+		name = "tool"
+	}
+	entry := toolActivity{id: id, name: name, summary: truncateRunes(summary, 80), status: "running"}
+	if idx, ok := s.toolIndex[id]; ok && id != "" && idx < len(s.tools) {
+		s.tools[idx] = entry
+		return
+	}
+	s.tools = append(s.tools, entry)
+	if id != "" {
+		s.toolIndex[id] = len(s.tools) - 1
+	}
+}
+
+// ToolFinished marks a tool invocation as done or errored.
+func (s *cardState) ToolFinished(id string, isError bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	idx, ok := s.toolIndex[id]
+	if !ok || idx >= len(s.tools) {
+		return
+	}
+	if isError {
+		s.tools[idx].status = "error"
+	} else {
+		s.tools[idx].status = "done"
+	}
+}
+
+// toolActivityMarkdown renders the tool activity list. Callers must hold s.mu.
+func (s *cardState) toolActivityMarkdown() string {
+	tools := s.tools
+	if len(tools) > maxToolLines {
+		tools = tools[len(tools)-maxToolLines:]
+	}
+	lines := make([]string, 0, len(tools))
+	for _, t := range tools {
+		icon := "⏳"
+		switch t.status {
+		case "done":
+			icon = "✅"
+		case "error":
+			icon = "❌"
+		}
+		line := "- " + icon + " `" + t.name + "`"
+		if t.summary != "" {
+			line += " — " + t.summary
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // splitCardBodies splits markdown content into multiple chunks that each fit
@@ -451,6 +640,14 @@ func (s *cardState) buildCardWithPrefix(sessionName string) string {
 			"content": "💭 **思考过程**\n\n" + thinking,
 		})
 	}
+	toolsText := ""
+	if len(s.tools) > 0 {
+		toolsText = s.toolActivityMarkdown()
+		elements = append(elements, map[string]interface{}{
+			"tag":     "markdown",
+			"content": "🔧 **工具活动**\n\n" + toolsText,
+		})
+	}
 	if !hasFinal && streamText != "" {
 		elements = append(elements, map[string]interface{}{
 			"tag":     "markdown",
@@ -459,7 +656,7 @@ func (s *cardState) buildCardWithPrefix(sessionName string) string {
 	}
 
 	if hasFinal && final != "" {
-		maxFinal := feishuMaxCardBytes - len(thinking) - 500
+		maxFinal := feishuMaxCardBytes - len(thinking) - len(toolsText) - 500
 		if maxFinal < 2000 {
 			maxFinal = 2000
 		}
@@ -475,6 +672,9 @@ func (s *cardState) buildCardWithPrefix(sessionName string) string {
 				"content": "📝 **最终回复**\n\n" + final,
 			},
 		)
+		if s.sessionKey != "" {
+			elements = append(elements, taskButtonRow(reanswerButton(s.sessionKey)))
+		}
 	}
 
 	card := map[string]interface{}{

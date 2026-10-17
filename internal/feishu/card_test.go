@@ -1,6 +1,7 @@
 package feishu
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -304,6 +305,60 @@ func TestCardState_ThinkingThenFinal(t *testing.T) {
 	}
 	if !contains(card, "the answer") {
 		t.Error("card should contain final text")
+	}
+}
+
+func TestCardState_ToolActivity(t *testing.T) {
+	state := newCardState("Pi")
+	state.ToolStarted("call-1", "bash", "ls -la")
+	state.ToolStarted("call-2", "read", "/tmp/x")
+	state.ToolFinished("call-1", false)
+	state.ToolFinished("call-2", true)
+
+	card := state.BuildCard()
+	if !contains(card, "工具活动") {
+		t.Error("card should contain tool activity header")
+	}
+	if !contains(card, "`bash`") {
+		t.Error("card should contain bash tool name")
+	}
+	if !contains(card, "ls -la") {
+		t.Error("card should contain tool summary")
+	}
+	// done vs error icons
+	if !contains(card, "✅") {
+		t.Error("card should mark finished tool with check icon")
+	}
+	if !contains(card, "❌") {
+		t.Error("card should mark errored tool with cross icon")
+	}
+}
+
+func TestCardState_ToolActivity_RunningAndBounded(t *testing.T) {
+	state := newCardState("Pi")
+	for i := 0; i < maxToolLines+3; i++ {
+		state.ToolStarted(fmt.Sprintf("call-%d", i), "bash", fmt.Sprintf("cmd-%d", i))
+	}
+
+	card := state.BuildCard()
+	if !contains(card, "⏳") {
+		t.Error("card should show running tool icon")
+	}
+	if contains(card, "cmd-0") {
+		t.Error("oldest tool entries should be dropped beyond maxToolLines")
+	}
+	if !contains(card, fmt.Sprintf("cmd-%d", maxToolLines+2)) {
+		t.Error("newest tool entry should be shown")
+	}
+}
+
+func TestCardState_NoTools_NoActivitySection(t *testing.T) {
+	state := newCardState("Pi")
+	state.SetFinal("done")
+
+	card := state.BuildCard()
+	if contains(card, "工具活动") {
+		t.Error("card without tools should not contain tool activity section")
 	}
 }
 

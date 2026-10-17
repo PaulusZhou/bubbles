@@ -695,3 +695,68 @@ func TestHandleTaskCreate_EmptyPrompt(t *testing.T) {
 		t.Errorf("Name = %q, want %q", taskResult.Name, "test")
 	}
 }
+
+// --- handleFeishuNotify ---
+
+func TestHandleFeishuNotify(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	notifier := &mockFeishuNotifier{}
+	sched.SetFeishuNotifier(notifier)
+
+	raw, _ := json.Marshal(ipc.FeishuNotifyParams{ChatID: "oc1", Text: "hello"})
+	result, err := sched.handleFeishuNotify(raw)
+	if err != nil {
+		t.Fatalf("handleFeishuNotify: %v", err)
+	}
+	if !result.(ipc.FeishuNotifyResult).Delivered {
+		t.Error("expected Delivered=true")
+	}
+	if texts := notifier.textList(); len(texts) != 1 || texts[0] != "hello" {
+		t.Errorf("notifier texts = %v, want [hello]", texts)
+	}
+}
+
+func TestHandleFeishuNotify_RequiresText(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+	sched.SetFeishuNotifier(&mockFeishuNotifier{})
+
+	raw, _ := json.Marshal(ipc.FeishuNotifyParams{Text: ""})
+	if _, err := sched.handleFeishuNotify(raw); err == nil {
+		t.Error("expected error for empty text")
+	}
+}
+
+func TestHandleFeishuNotify_NoNotifier(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	raw, _ := json.Marshal(ipc.FeishuNotifyParams{Text: "hello"})
+	if _, err := sched.handleFeishuNotify(raw); err == nil {
+		t.Error("expected error when feishu is not configured")
+	}
+}
+
+// --- handleSessionStats / handleSessionExport ---
+
+func TestHandleSessionStats_RequiresSessionID(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	raw, _ := json.Marshal(ipc.SessionParams{})
+	if _, err := sched.handleSessionStats(raw); err == nil {
+		t.Error("expected error for empty session id")
+	}
+}
+
+func TestHandleSessionExport_RequiresSessionID(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	raw, _ := json.Marshal(ipc.SessionParams{Path: "/tmp/out.html"})
+	if _, err := sched.handleSessionExport(raw); err == nil {
+		t.Error("expected error for empty session id")
+	}
+}

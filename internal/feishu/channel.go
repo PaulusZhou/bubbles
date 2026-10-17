@@ -2,6 +2,7 @@ package feishu
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sort"
@@ -55,12 +56,16 @@ type FeishuChannel struct {
 	ch            types.Channel
 	cfg           *config.Config
 	agentClient   *agent.Client
+	rpc           *agent.RPCManager         // long-lived pi RPC sessions (nil unless enabled)
 	commands      map[string]CommandHandler // prefix -> handler
 	defaultChatID string
 	scheduler     *daemon.Scheduler // for direct task operations on card callbacks
 
 	chatStates   map[string]*chatState // chatID -> chat state
 	chatStatesMu sync.Mutex
+
+	uiChoices   map[string]chan string // pending extension UI dialogs: request ID -> choice chan
+	uiChoicesMu sync.Mutex
 }
 
 // New creates a FeishuChannel from the given config.
@@ -86,10 +91,18 @@ func New(cfg *config.Config) *FeishuChannel {
 	ch := channel.NewChannel(larkClient, wsClient)
 	slog.Info("feishu channel instance created")
 
+	var rpcManager *agent.RPCManager
+	if cfg.Agent == "pi" {
+		// pi chat runs on long-lived RPC sessions enabling mid-run steering.
+		rpcManager = agent.NewRPCManager(cfg.PiPath, cfg.WorkDir, cfg.PiModel, cfg.PiRPCIdleTimeout())
+		slog.Info("feishu: pi RPC mode enabled", "idle_timeout", cfg.PiRPCIdleTimeout(), "behavior", cfg.PiRPCBehavior)
+	}
+
 	return &FeishuChannel{
 		ch:            ch,
 		cfg:           cfg,
 		agentClient:   agent.NewClient(cfg.Agent, cfg.AgentBinary(), cfg.PiModel),
+		rpc:           rpcManager,
 		commands:      make(map[string]CommandHandler),
 		defaultChatID: cfg.FeishuChatID,
 		chatStates:    make(map[string]*chatState),
@@ -106,6 +119,20 @@ func (f *FeishuChannel) RegisterCommand(prefix string, handler CommandHandler) {
 // Must be called before Start().
 func (f *FeishuChannel) SetScheduler(scheduler *daemon.Scheduler) {
 	f.scheduler = scheduler
+}
+
+// NotifyText sends a plain text message to a Feishu chat, falling back to the
+// configured default chat when chatID is empty. Implements
+// daemon.FeishuNotifier.
+func (f *FeishuChannel) NotifyText(ctx context.Context, chatID, text string) error {
+	if chatID == "" {
+		chatID = f.defaultChatID
+	}
+	if chatID == "" {
+		return fmt.Errorf("no chat_id configured")
+	}
+	_, err := f.ch.Send(ctx, &types.SendInput{ChatID: chatID, Text: text})
+	return err
 }
 
 // NotifyTaskCompletion sends a task completion notification to Feishu as a v2 card.
@@ -267,6 +294,9 @@ func (f *FeishuChannel) CloseSession(chatID, sessionKey string) error {
 		return fmt.Errorf("session %s not found", sessionKey)
 	}
 	delete(cs.sessions, sessionKey)
+	if f.rpc != nil {
+		f.rpc.Close(rpcKey(chatID, sessionKey))
+	}
 
 	// If this was the active session, switch to the most recent remaining
 	if cs.activeKey == sessionKey {
@@ -371,6 +401,44 @@ func truncateRunes(s string, n int) string {
 	return string(runes[:n]) + "…"
 }
 
+// rpcKey builds the RPC manager key for a chat session.
+func rpcKey(chatID, sessionKey string) string {
+	return chatID + "/" + sessionKey
+}
+
+// applyStreamEvent updates the card state and session bookkeeping for one
+// stream event. The caller performs the card update afterwards.
+func (f *FeishuChannel) applyStreamEvent(cs *chatState, sessionKey string, state *cardState, event agent.StreamEvent) {
+	slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text))
+	switch event.Type {
+	case "system":
+		if event.SessionID != "" {
+			cs.mu.Lock()
+			if s, ok := cs.sessions[sessionKey]; ok {
+				s.agentSID = event.SessionID
+				s.lastActive = time.Now()
+				slog.Info("feishu: session updated", "session_key", sessionKey, "agent_sid", event.SessionID)
+			}
+			cs.mu.Unlock()
+		}
+	case "thinking":
+		state.SetThinking(event.Text)
+	case "text":
+		state.SetText(event.Text)
+	case "tool_use":
+		state.ToolStarted(event.ToolUseID, event.ToolName, event.Text)
+	case "tool_result":
+		state.ToolFinished(event.ToolUseID, event.IsError)
+	case "result":
+		state.SetFinal(event.Text)
+		cs.mu.Lock()
+		if s, ok := cs.sessions[sessionKey]; ok {
+			s.lastActive = time.Now()
+		}
+		cs.mu.Unlock()
+	}
+}
+
 // processMessage handles a single message with agent streaming in its own goroutine.
 func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sessionKey string) {
 	chatID := msg.ChatID
@@ -431,35 +499,7 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 	}
 
 	err = f.agentClient.StreamWithEvents(streamCtx, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
-		slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text), "text_preview", func() string {
-			if len(event.Text) > 150 {
-				return event.Text[:150]
-			}
-			return event.Text
-		}())
-		switch event.Type {
-		case "system":
-			if event.SessionID != "" {
-				cs.mu.Lock()
-				if s, ok := cs.sessions[sessionKey]; ok {
-					s.agentSID = event.SessionID
-					s.lastActive = time.Now()
-					slog.Info("feishu: session updated", "chat_id", chatID, "session_key", sessionKey, "agent_sid", event.SessionID)
-				}
-				cs.mu.Unlock()
-			}
-		case "thinking":
-			state.SetThinking(event.Text)
-		case "text":
-			state.SetText(event.Text)
-		case "result":
-			state.SetFinal(event.Text)
-			cs.mu.Lock()
-			if s, ok := cs.sessions[sessionKey]; ok {
-				s.lastActive = time.Now()
-			}
-			cs.mu.Unlock()
-		}
+		f.applyStreamEvent(cs, sessionKey, state, event)
 		return streamCtrl.UpdateCard(streamCtx, state.BuildCardWithName(sessionName))
 	})
 
@@ -482,6 +522,198 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 	}
 
 	slog.Info("feishu: message processed", "chat_id", chatID, "session_key", sessionKey)
+}
+
+// processMessageRPC handles a message through a long-lived pi RPC session.
+// When a run is already in flight for the session, the message is steered into
+// it instead of waiting for the previous run to finish.
+func (f *FeishuChannel) processMessageRPC(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sessionKey string) {
+	chatID := msg.ChatID
+	cs := f.getChatState(chatID)
+
+	resumeSessionID := f.getResumeSessionID(chatID, sessionKey)
+	sess, err := f.rpc.Get(ctx, rpcKey(chatID, sessionKey), resumeSessionID)
+	if err != nil {
+		slog.Error("feishu: failed to start pi rpc session", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		_, _ = ch.Send(ctx, &types.SendInput{ChatID: chatID, Text: fmt.Sprintf("❌ 启动 Pi 会话失败: %v", err)})
+		return
+	}
+	sess.SetUIBridge(&uiBridge{f: f, chatID: chatID})
+
+	if sess.Running() {
+		f.steerIntoRun(ctx, ch, msg, sess)
+		return
+	}
+
+	streamCtx, streamCancel := context.WithCancel(ctx)
+	cs.mu.Lock()
+	sessionName := ""
+	if s, ok := cs.sessions[sessionKey]; ok {
+		s.cancelFunc = streamCancel
+		sessionName = s.name
+		if s.firstMessage == "" {
+			s.firstMessage = truncateRunes(msg.Content, 100)
+		}
+	}
+	cs.mu.Unlock()
+	defer func() {
+		streamCancel()
+		cs.mu.Lock()
+		if s, ok := cs.sessions[sessionKey]; ok {
+			s.cancelFunc = nil
+		}
+		cs.mu.Unlock()
+	}()
+
+	slog.Info("feishu: processing message via pi rpc",
+		"chat_id", chatID,
+		"session_key", sessionKey,
+		"message_id", msg.MessageID,
+		"resume_session_id", resumeSessionID,
+	)
+
+	state := newCardState(f.agentClient.DisplayName())
+	state.SetSessionKey(sessionKey)
+	streamCtrl, err := ch.Stream(streamCtx, &types.SendInput{
+		ChatID:         chatID,
+		ReplyMessageID: msg.MessageID,
+		Card:           state.BuildCard(),
+	})
+	if err != nil {
+		slog.Error("feishu: failed to start card stream", "chat_id", chatID, "error", err)
+		return
+	}
+
+	err = sess.RunPrompt(streamCtx, msg.Content, func(event agent.StreamEvent) error {
+		f.applyStreamEvent(cs, sessionKey, state, event)
+		return streamCtrl.UpdateCard(streamCtx, state.BuildCardWithName(sessionName))
+	})
+
+	streamCtrl.Close(streamCtx)
+
+	if errors.Is(err, agent.ErrRunInFlight) {
+		// Lost a start race with a concurrent message: steer instead.
+		f.steerIntoRun(ctx, ch, msg, sess)
+		return
+	}
+	if err != nil {
+		if streamCtx.Err() != nil {
+			slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
+			return
+		}
+		slog.Error("feishu: pi rpc run failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+	}
+
+	for _, cardJSON := range state.BuildExtraCardsWithName(sessionName) {
+		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: chatID, Card: cardJSON}); sendErr != nil {
+			slog.Error("feishu: failed to send extra card", "chat_id", chatID, "error", sendErr)
+		}
+	}
+	slog.Info("feishu: message processed", "chat_id", chatID, "session_key", sessionKey)
+}
+
+// steerIntoRun delivers a message into an in-flight pi run and acknowledges it
+// with a short reply; the run's original card keeps streaming the outcome.
+func (f *FeishuChannel) steerIntoRun(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sess *agent.RPCSession) {
+	var err error
+	text := "↩️ 已引导（steer）并入进行中的任务，后续回复会出现在原卡片"
+	if f.cfg.PiRPCBehavior == "follow_up" {
+		err = sess.FollowUp(ctx, msg.Content)
+		text = "⏭️ 已排队（follow up）并入进行中的任务，当前任务完成后处理"
+	} else {
+		err = sess.Steer(ctx, msg.Content)
+	}
+	if err != nil {
+		text = fmt.Sprintf("❌ 消息未能并入当前任务: %v", err)
+	}
+	if _, sendErr := ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, ReplyMessageID: msg.MessageID, Text: text}); sendErr != nil {
+		slog.Error("feishu: failed to send steer ack", "chat_id", msg.ChatID, "error", sendErr)
+	}
+	slog.Info("feishu: message steered into active run", "chat_id", msg.ChatID, "message_id", msg.MessageID, "error", err)
+}
+
+// runRefork forks the pi session at a user message and re-runs its prompt,
+// streaming the new answer into a fresh card. With an empty entryID it forks
+// at the most recent question ("重新回答").
+func (f *FeishuChannel) runRefork(chatID, sessionKey, entryID string) {
+	if f.rpc == nil {
+		f.sendChatText(context.Background(), chatID, "❌ 重新回答仅支持 pi agent")
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
+	defer cancel()
+
+	sess, err := f.rpc.Get(ctx, rpcKey(chatID, sessionKey), f.getResumeSessionID(chatID, sessionKey))
+	if err != nil {
+		slog.Error("feishu: refork failed to start pi rpc session", "chat_id", chatID, "error", err)
+		f.sendChatText(ctx, chatID, fmt.Sprintf("❌ 启动 Pi 会话失败: %v", err))
+		return
+	}
+	sess.SetUIBridge(&uiBridge{f: f, chatID: chatID})
+	if sess.Running() {
+		f.sendChatText(ctx, chatID, "⏳ 当前任务进行中，请等完成后再重新回答")
+		return
+	}
+
+	if entryID == "" {
+		msgs, err := sess.GetForkMessages(ctx)
+		if err != nil || len(msgs) == 0 {
+			slog.Error("feishu: refork no forkable messages", "chat_id", chatID, "error", err)
+			f.sendChatText(ctx, chatID, "❌ 当前会话没有可重新回答的问题")
+			return
+		}
+		entryID = msgs[len(msgs)-1].EntryID
+	}
+
+	text, cancelled, err := sess.Fork(ctx, entryID)
+	if err != nil {
+		slog.Error("feishu: refork fork failed", "chat_id", chatID, "error", err)
+		f.sendChatText(ctx, chatID, fmt.Sprintf("❌ 分支失败: %v", err))
+		return
+	}
+	if cancelled {
+		f.sendChatText(ctx, chatID, "🚫 分支操作被取消")
+		return
+	}
+	if text == "" {
+		f.sendChatText(ctx, chatID, "❌ 未找到原始提问")
+		return
+	}
+
+	slog.Info("feishu: refork re-running prompt", "chat_id", chatID, "session_key", sessionKey, "entry_id", entryID)
+	f.sendChatText(ctx, chatID, "🔄 已回到该提问，重新生成回答…")
+	f.processMessageRPC(ctx, f.ch, &types.NormalizedMessage{ChatID: chatID, Content: text}, sessionKey)
+}
+
+// HandleReforkCommand lists forkable user messages as buttons so the user can
+// re-run the conversation from one of them ("/refork").
+func (f *FeishuChannel) HandleReforkCommand(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+	if f.rpc == nil {
+		_, err := ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Text: "❌ 分支功能仅支持 pi agent"})
+		return err
+	}
+	session := f.getOrCreateActiveSession(msg.ChatID)
+	sessionKey := session.key
+
+	sess, err := f.rpc.Get(ctx, rpcKey(msg.ChatID, sessionKey), f.getResumeSessionID(msg.ChatID, sessionKey))
+	if err != nil {
+		_, err = ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Text: fmt.Sprintf("❌ 启动 Pi 会话失败: %v", err)})
+		return err
+	}
+	sess.SetUIBridge(&uiBridge{f: f, chatID: msg.ChatID})
+
+	msgs, err := sess.GetForkMessages(ctx)
+	if err != nil {
+		_, err = ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Text: fmt.Sprintf("❌ 获取历史提问失败: %v", err)})
+		return err
+	}
+	if len(msgs) == 0 {
+		_, err = ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Text: "当前会话还没有提问"})
+		return err
+	}
+
+	_, err = ch.Send(ctx, &types.SendInput{ChatID: msg.ChatID, Card: BuildForkMessagesCard(msgs, sessionKey)})
+	return err
 }
 
 // Start registers event handlers and starts the WebSocket connection.
@@ -536,12 +768,20 @@ func (f *FeishuChannel) Start(ctx context.Context) error {
 		}
 	}()
 
+	// Reap idle pi RPC sessions and close them all on shutdown.
+	if f.rpc != nil {
+		go f.rpc.RunJanitor(ctx, time.Minute)
+	}
+
 	return nil
 }
 
 // Stop gracefully stops the Feishu Channel.
 func (f *FeishuChannel) Stop(ctx context.Context) error {
 	slog.Info("stopping feishu channel")
+	if f.rpc != nil {
+		f.rpc.CloseAll()
+	}
 	if f.ch != nil {
 		err := f.ch.Stop(ctx)
 		if err != nil {
@@ -574,20 +814,29 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	}
 
 	// 非命令消息：获取活跃会话，在独立 goroutine 中处理
-	// 同一会话的消息串行执行（保护 agentSID 链），不同会话并发
+	// 同一会话的消息串行执行（保护 agentSID 链），不同会话并发；
+	// pi RPC 模式下消息可中途 steer 进正在运行的任务，无需排队
 	activeSession := f.getOrCreateActiveSession(msg.ChatID)
 	sessionKey := activeSession.key
-	sem := activeSession.sem
 
 	// Use Background context because this goroutine outlives the message handler.
 	// The 35-minute timeout prevents runaway agent sessions.
 	msgCtx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
-	go func() {
-		defer cancel()
-		sem <- struct{}{} // 同一会话排队等待
-		defer func() { <-sem }()
-		f.processMessage(msgCtx, ch, msg, sessionKey)
-	}()
+
+	if f.rpc != nil {
+		go func() {
+			defer cancel()
+			f.processMessageRPC(msgCtx, ch, msg, sessionKey)
+		}()
+	} else {
+		sem := activeSession.sem
+		go func() {
+			defer cancel()
+			sem <- struct{}{} // 同一会话排队等待
+			defer func() { <-sem }()
+			f.processMessage(msgCtx, ch, msg, sessionKey)
+		}()
+	}
 
 	slog.Info("feishu: message dispatched", "chat_id", msg.ChatID, "session_key", sessionKey, "session_name", activeSession.name)
 	return nil
@@ -614,6 +863,33 @@ func (f *FeishuChannel) handleCardAction(ctx context.Context, event *types.CardA
 
 	// Handle session actions
 	switch action {
+	case "ui_choice":
+		requestID, _ := event.Action.Value["request_id"].(string)
+		choice, _ := event.Action.Value["choice"].(string)
+		if requestID == "" {
+			return nil
+		}
+		if f.resolveUIChoice(requestID, choice) {
+			slog.Info("feishu: ui choice clicked", "request_id", requestID, "choice", choice)
+		} else {
+			slog.Warn("feishu: ui choice for unknown request", "request_id", requestID)
+		}
+		return nil
+	case "reanswer":
+		sessionKey, _ := event.Action.Value["session_key"].(string)
+		if sessionKey == "" {
+			return nil
+		}
+		go f.runRefork(event.ChatID, sessionKey, "")
+		return nil
+	case "refork":
+		sessionKey, _ := event.Action.Value["session_key"].(string)
+		entryID, _ := event.Action.Value["entry_id"].(string)
+		if sessionKey == "" {
+			return nil
+		}
+		go f.runRefork(event.ChatID, sessionKey, entryID)
+		return nil
 	case "switch_session":
 		if sessionKey == "" {
 			return nil
@@ -807,6 +1083,10 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
 			state.SetThinking(event.Text)
 		case "text":
 			state.SetText(event.Text)
+		case "tool_use":
+			state.ToolStarted(event.ToolUseID, event.ToolName, event.Text)
+		case "tool_result":
+			state.ToolFinished(event.ToolUseID, event.IsError)
 		case "result":
 			state.SetFinal(event.Text)
 		}

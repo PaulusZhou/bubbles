@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -20,15 +21,17 @@ func DefaultDataDir() string {
 
 // Config holds application configuration.
 type Config struct {
-	FeishuAppID     string `yaml:"feishu_app_id"`
-	FeishuAppSecret string `yaml:"feishu_app_secret"`
-	FeishuChatID    string `yaml:"feishu_chat_id"`
-	Agent           string `yaml:"agent"`       // "claude" (default) or "pi"
-	ClaudePath      string `yaml:"claude_path"` // claude CLI path (agent: claude)
-	PiPath          string `yaml:"pi_path"`     // pi CLI path (agent: pi)
-	PiModel         string `yaml:"pi_model"`    // optional model override passed to pi --model
-	DataDir         string `yaml:"data_dir"`
-	WorkDir         string `yaml:"work_dir"`
+	FeishuAppID      string `yaml:"feishu_app_id"`
+	FeishuAppSecret  string `yaml:"feishu_app_secret"`
+	FeishuChatID     string `yaml:"feishu_chat_id"`
+	Agent            string `yaml:"agent"`               // "claude" (default) or "pi"
+	ClaudePath       string `yaml:"claude_path"`         // claude CLI path (agent: claude)
+	PiPath           string `yaml:"pi_path"`             // pi CLI path (agent: pi)
+	PiModel          string `yaml:"pi_model"`            // optional model override passed to pi --model
+	PiRPCBehavior    string `yaml:"pi_rpc_behavior"`     // mid-run message behavior: "steer" (default) or "follow_up"
+	PiRPCIdleMinutes int    `yaml:"pi_rpc_idle_minutes"` // idle TTL for pi RPC sessions in minutes, default 30
+	DataDir          string `yaml:"data_dir"`
+	WorkDir          string `yaml:"work_dir"`
 }
 
 // configPath returns the path to the config file.
@@ -83,6 +86,9 @@ func Load() (*Config, error) {
 	if v := os.Getenv("BUBBLES_PI_MODEL"); v != "" {
 		cfg.PiModel = v
 	}
+	if v := os.Getenv("BUBBLES_PI_RPC_BEHAVIOR"); v != "" {
+		cfg.PiRPCBehavior = v
+	}
 	if v := os.Getenv("BUBBLES_DATA_DIR"); v != "" {
 		cfg.DataDir = v
 	}
@@ -97,6 +103,16 @@ func Load() (*Config, error) {
 		// ok
 	default:
 		return nil, fmt.Errorf("agent must be \"claude\" or \"pi\", got %q", cfg.Agent)
+	}
+	cfg.PiRPCBehavior = strings.ToLower(strings.TrimSpace(cfg.PiRPCBehavior))
+	switch cfg.PiRPCBehavior {
+	case "", "steer", "follow_up":
+		// ok
+	default:
+		return nil, fmt.Errorf("pi_rpc_behavior must be \"steer\" or \"follow_up\", got %q", cfg.PiRPCBehavior)
+	}
+	if cfg.PiRPCIdleMinutes < 0 {
+		return nil, fmt.Errorf("pi_rpc_idle_minutes must be >= 0, got %d", cfg.PiRPCIdleMinutes)
 	}
 
 	return cfg, nil
@@ -113,4 +129,12 @@ func (c *Config) AgentBinary() string {
 // DBPath returns the path to the SQLite database file.
 func (c *Config) DBPath() string {
 	return filepath.Join(c.DataDir, "bubbles.db")
+}
+
+// PiRPCIdleTimeout returns the idle TTL for pi RPC sessions.
+func (c *Config) PiRPCIdleTimeout() time.Duration {
+	if c.PiRPCIdleMinutes <= 0 {
+		return 30 * time.Minute
+	}
+	return time.Duration(c.PiRPCIdleMinutes) * time.Minute
 }

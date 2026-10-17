@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -130,6 +131,68 @@ echo '{"type":"agent_settled","aborted":false}'`, "sess-123")
 	want := "--mode json --approve --session sess-123 -- prompt"
 	if args != want {
 		t.Errorf("args = %q, want %q", args, want)
+	}
+}
+
+func TestPiStreamWithEvents_ToolEvents(t *testing.T) {
+	events, err := collectStreamEvents(t, `cat <<'EOF'
+{"type":"session","version":3,"id":"sess-tools"}
+{"type":"message_start","message":{"role":"assistant","content":[],"stopReason":"pending"}}
+{"type":"tool_execution_start","toolCallId":"call-1","toolName":"bash","args":{"command":"ls -la"}}
+{"type":"tool_execution_update","toolCallId":"call-1","toolName":"bash","args":{"command":"ls -la"},"partialResult":{"content":[{"type":"text","text":"partial"}]}}
+{"type":"tool_execution_end","toolCallId":"call-1","toolName":"bash","result":{"content":[{"type":"text","text":"done"}]},"isError":false}
+{"type":"tool_execution_start","toolCallId":"call-2","toolName":"read","args":{"path":"/tmp/x"}}
+{"type":"tool_execution_end","toolCallId":"call-2","toolName":"read","result":{"content":[]},"isError":true}
+{"type":"message_end","message":{"role":"assistant","content":[{"type":"text","text":"完成"}],"stopReason":"stop"}}
+{"type":"agent_settled","aborted":false}
+EOF`, "")
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	var toolEvents []StreamEvent
+	for _, ev := range events {
+		if ev.Type == "tool_use" || ev.Type == "tool_result" {
+			toolEvents = append(toolEvents, ev)
+		}
+	}
+	want := []StreamEvent{
+		{Type: "tool_use", ToolName: "bash", ToolUseID: "call-1", Text: "ls -la"},
+		{Type: "tool_result", ToolName: "bash", ToolUseID: "call-1", IsError: false},
+		{Type: "tool_use", ToolName: "read", ToolUseID: "call-2", Text: "/tmp/x"},
+		{Type: "tool_result", ToolName: "read", ToolUseID: "call-2", IsError: true},
+	}
+	if len(toolEvents) != len(want) {
+		t.Fatalf("got %d tool events %+v, want %d", len(toolEvents), toolEvents, len(want))
+	}
+	for i, w := range want {
+		if toolEvents[i].Type != w.Type || toolEvents[i].ToolName != w.ToolName ||
+			toolEvents[i].ToolUseID != w.ToolUseID || toolEvents[i].IsError != w.IsError ||
+			toolEvents[i].Text != w.Text {
+			t.Errorf("tool event[%d] = %+v, want %+v", i, toolEvents[i], w)
+		}
+	}
+}
+
+func TestPiToolSummary(t *testing.T) {
+	tests := []struct {
+		name string
+		args string
+		want string
+	}{
+		{"prefers command", `{"command":"ls","description":"list"}`, "ls"},
+		{"falls back to path", `{"path":"/tmp/x"}`, "/tmp/x"},
+		{"empty", ``, ""},
+		{"arbitrary json truncated", `{"a":"` + strings.Repeat("x", 200) + `"}`, `{"a":"` + strings.Repeat("x", 114) + "…"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := piToolSummary(json.RawMessage(tt.args))
+			if got != tt.want {
+				t.Errorf("piToolSummary(%s) = %q, want %q", tt.args, got, tt.want)
+			}
+		})
 	}
 }
 
