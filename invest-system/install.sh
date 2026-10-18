@@ -36,7 +36,7 @@ if [ ! -d "$PI_DIR/extensions/subagent" ]; then
     cp "$PI_EXAMPLES/index.ts" "$PI_EXAMPLES/agents.ts" "$PI_DIR/extensions/subagent/"
     echo "✓ subagent 扩展已安装（agent 运行引擎）"
   else
-    echo "⚠ 未找到 subagent 扩展源（$PI_EXAMPLES），agent 委派不可用，请手动安装"
+    echo "⚠ 未找到 subagent 扩展源（${PI_EXAMPLES}），agent 委派不可用，请手动安装"
   fi
 else
   echo "✓ subagent 扩展已存在"

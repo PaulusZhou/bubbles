@@ -39,7 +39,7 @@ agent: pi
 pi_path: pi
 pi_model: mimo-v2.6-pro
 EOF
-  echo "✓ 已生成 ~/.bubbles/config.yaml（work_dir: $REPO）"
+  echo "✓ 已生成 ~/.bubbles/config.yaml（work_dir: ${REPO}）"
 else
   echo "✓ 已有 ~/.bubbles/config.yaml（work_dir: $(python3 -c "import yaml,os;print(yaml.safe_load(open(os.path.expanduser('~/.bubbles/config.yaml'))).get('work_dir'))")）"
 fi
