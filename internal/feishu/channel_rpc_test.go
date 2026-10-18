@@ -18,6 +18,7 @@ import (
 // fakeStreamCtrl records card updates from a streaming reply.
 type fakeStreamCtrl struct {
 	mu      sync.Mutex
+	ctx     context.Context
 	updates []string
 	closed  bool
 }
@@ -52,6 +53,18 @@ func (c *fakeStreamCtrl) updateCount() int {
 	return len(c.updates)
 }
 
+func (c *fakeStreamCtrl) streamCtx() context.Context {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.ctx
+}
+
+func (c *fakeStreamCtrl) isClosed() bool {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.closed
+}
+
 // fakeChannel implements types.Channel for tests: it records sends and hands
 // out fakeStreamCtrl instances. Unimplemented methods panic via the embedded
 // nil interface if unexpectedly called.
@@ -69,10 +82,10 @@ func (f *fakeChannel) Send(_ context.Context, in *types.SendInput) (*types.SendR
 	return &types.SendResult{}, nil
 }
 
-func (f *fakeChannel) Stream(_ context.Context, in *types.SendInput) (types.StreamController, error) {
+func (f *fakeChannel) Stream(ctx context.Context, in *types.SendInput) (types.StreamController, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	ctrl := &fakeStreamCtrl{}
+	ctrl := &fakeStreamCtrl{ctx: ctx}
 	f.streams = append(f.streams, ctrl)
 	return ctrl, nil
 }

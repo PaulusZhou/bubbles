@@ -451,6 +451,12 @@ func (f *FeishuChannel) reportRunFailure(ctx context.Context, chatID, sessionKey
 	case errors.Is(cause, errRunStalled), errors.Is(cause, errRunExceeded):
 		slog.Warn("feishu: run aborted by watchdog", "chat_id", chatID, "session_key", sessionKey, "cause", cause, "error", err)
 		f.sendChatText(ctx, chatID, fmt.Sprintf("⏱ 任务已中止：%v。会话已保留，可发送消息继续，或用 /refork 重新回答。", cause))
+	case errors.Is(cause, context.DeadlineExceeded), errors.Is(err, context.DeadlineExceeded):
+		// A wall-clock deadline leaked into the run from somewhere upstream (the
+		// watchdog aborts with explicit causes). Report it as a timeout, not a
+		// crash, so the card is never frozen without explanation.
+		slog.Warn("feishu: run aborted by deadline", "chat_id", chatID, "session_key", sessionKey, "cause", cause, "error", err)
+		f.sendChatText(ctx, chatID, "⏱ 任务已中止：执行超时。会话已保留，可发送消息继续，或用 /refork 重新回答。")
 	default:
 		slog.Error("feishu: agent run failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
 		f.sendChatText(ctx, chatID, fmt.Sprintf("❌ 任务执行失败: %v", err))
@@ -849,8 +855,11 @@ func (f *FeishuChannel) HandleMessage(ctx context.Context, ch types.Channel, msg
 	sessionKey := activeSession.key
 
 	// Use Background context because this goroutine outlives the message handler.
-	// The 35-minute timeout prevents runaway agent sessions.
-	msgCtx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
+	// No wall-clock deadline here: runs are bounded by the inactivity watchdog
+	// (runwatchdog.go) inside processMessage/processMessageRPC. A deadline on
+	// this parent would cancel the run context with DeadlineExceeded and kill
+	// long but healthy runs mid-flight.
+	msgCtx, cancel := context.WithCancel(context.Background())
 
 	if f.rpc != nil {
 		go func() {
@@ -1129,9 +1138,16 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
 	streamCtrl.Close(closeCtx)
 
 	if err != nil {
-		if cause := context.Cause(ctx); errors.Is(cause, errRunStalled) || errors.Is(cause, errRunExceeded) {
-			slog.Warn("feishu: create task run aborted by watchdog", "chat_id", chatID, "cause", cause, "error", err)
-			f.sendChatText(closeCtx, chatID, fmt.Sprintf("⏱ 创建任务已中止：%v", cause))
+		cause := context.Cause(ctx)
+		aborted := errors.Is(cause, errRunStalled) || errors.Is(cause, errRunExceeded) ||
+			errors.Is(cause, context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded)
+		if aborted {
+			slog.Warn("feishu: create task run aborted", "chat_id", chatID, "cause", cause, "error", err)
+			if errors.Is(cause, context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded) {
+				f.sendChatText(closeCtx, chatID, "⏱ 创建任务已中止：执行超时")
+			} else {
+				f.sendChatText(closeCtx, chatID, fmt.Sprintf("⏱ 创建任务已中止：%v", cause))
+			}
 		} else {
 			slog.Error("feishu: agent stream failed for create task", "chat_id", chatID, "error", err)
 			f.sendChatText(closeCtx, chatID, fmt.Sprintf("❌ 任务创建失败: %v", err))
