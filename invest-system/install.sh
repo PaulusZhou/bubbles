@@ -87,10 +87,10 @@ if os.path.exists(sp):
 PYEOF2
 
 # 2) 数据文件：只在缺失时补默认（policy.yaml / decision-log.md 是数据，不覆盖）
+#    产出目录（stocks/ holding/ review/ ...）不预建——写文件时按需自动创建
 [ -f "$WORK_DIR/policy.yaml" ] || cp "$KIT/policy.yaml" "$WORK_DIR/policy.yaml"
 [ -f "$WORK_DIR/decision-log.md" ] || cp "$KIT/decision-log.md" "$WORK_DIR/decision-log.md"
-mkdir -p "$WORK_DIR"/{stocks,holding/daily,industry,events,review,rss-digest,_snapshots,mx_data/output}
-echo "✓ 数据骨架: ${WORK_DIR}（policy.yaml / decision-log.md 存在则保留）"
+echo "✓ 数据文件: policy.yaml / decision-log.md（产出目录按需自动创建）"
 
 echo ""
 echo "✅ 安装完成（.pi 项目布局）。"
