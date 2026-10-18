@@ -5,6 +5,7 @@
  *  - feishu_notify:   向飞书会话/群发送通知（经 bubblesd IPC `feishu.notify`）
  *  - bubbles_task:    在会话内创建 / 查询 / 立即运行定时任务（`task.*`）
  *  - bubbles_status:  查询 bubblesd 运行状态（`daemon.status`）
+ *  - bubbles_holding: 查看 / 新增 / 修改 / 删除持仓（`holding.*`，SQLite 持仓库）
  *
  * 安装：把本目录复制到 ~/.pi/agent/extensions/bubbles-pi/ 或项目 .pi/extensions/。
  * 依赖 bubblesd 正在运行（unix socket，默认 ~/.bubbles/bubblesd.sock，
@@ -185,6 +186,99 @@ const bubblesStatusTool = defineTool({
 	},
 });
 
+const bubblesHoldingTool = defineTool({
+	name: "bubbles_holding",
+	label: "Bubbles Holding",
+	description:
+		"View and manage portfolio holdings stored in the bubblesd SQLite database. " +
+		"Use action list/get to read holdings (with cost, stop_loss, target, hypothesis, " +
+		"state, review_date), and upsert/delete to modify them. Upsert is a partial " +
+		"update: omitted fields keep their stored values; name is required when creating. " +
+		"state is one of: holding, watchlist, validating, pending_decision, falsified, sold.",
+	annotations: { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+	parameters: Type.Object({
+		action: Type.Union(
+			[
+				Type.Literal("list"),
+				Type.Literal("get"),
+				Type.Literal("upsert"),
+				Type.Literal("delete"),
+			],
+			{ description: "What to do" },
+		),
+		ticker: Type.Optional(Type.String({ description: "Ticker like HK.01810 / 603662.SH (required for get/upsert/delete)" })),
+		name: Type.Optional(Type.String({ description: "Display name, required when creating a holding" })),
+		market: Type.Optional(Type.String({ description: "Market: 港股 / A股 / 美股" })),
+		qty: Type.Optional(Type.Number({ description: "Position size in shares" })),
+		cost: Type.Optional(Type.Number({ description: "Average cost price" })),
+		state: Type.Optional(Type.String({ description: "holding | watchlist | validating | pending_decision | falsified | sold" })),
+		hypothesis: Type.Optional(Type.String({ description: "Falsifiable investment hypothesis" })),
+		stop_loss: Type.Optional(Type.Number({ description: "Stop-loss price" })),
+		target: Type.Optional(Type.Number({ description: "Target price" })),
+		review_date: Type.Optional(Type.String({ description: "Mandatory review date YYYY-MM-DD" })),
+		decision: Type.Optional(Type.String({ description: "Decision log ID, e.g. D-20261018-01" })),
+		notes: Type.Optional(Type.String({ description: "Free-form notes" })),
+	}),
+
+	async execute(_toolCallId, params, _signal, _onUpdate, _ctx) {
+		switch (params.action) {
+			case "list": {
+				const result = await callBubblesdResult("holding.list", {});
+				return {
+					content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+					details: result,
+				};
+			}
+			case "get": {
+				if (!params.ticker) throw new Error("get requires ticker");
+				const result = await callBubblesdResult("holding.get", { ticker: params.ticker });
+				return {
+					content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+					details: result,
+				};
+			}
+			case "upsert": {
+				if (!params.ticker) throw new Error("upsert requires ticker");
+				const fields: Record<string, unknown> = { ticker: params.ticker };
+				for (const key of [
+					"name",
+					"market",
+					"qty",
+					"cost",
+					"state",
+					"hypothesis",
+					"stop_loss",
+					"target",
+					"review_date",
+					"decision",
+					"notes",
+				]) {
+					const v = (params as Record<string, unknown>)[key];
+					if (v !== undefined) fields[key] = v;
+				}
+				const result = await callBubblesdResult("holding.upsert", fields);
+				return {
+					content: [
+						{
+							type: "text",
+							text: `Holding saved: ${JSON.stringify(result)}`,
+						},
+					],
+					details: result,
+				};
+			}
+			case "delete": {
+				if (!params.ticker) throw new Error("delete requires ticker");
+				const result = await callBubblesdResult("holding.delete", { ticker: params.ticker });
+				return {
+					content: [{ type: "text", text: `Holding deleted: ${params.ticker}` }],
+					details: result,
+				};
+			}
+		}
+	},
+});
+
 // ---------------------------------------------------------------------------
 // 审批门
 // ---------------------------------------------------------------------------
@@ -204,6 +298,11 @@ function toolNeedsApproval(pi: ExtensionAPI, toolName: string, input: unknown): 
 	// 显式声明为破坏性的工具（如 bubbles_task）一律确认。
 	if (tool?.annotations?.destructiveHint === true) {
 		return true;
+	}
+	// 持仓写操作（upsert/delete）需确认；只读的 list/get 放行。
+	if (toolName === "bubbles_holding") {
+		const action = (input as { action?: string })?.action ?? "";
+		return action === "upsert" || action === "delete";
 	}
 	// 已知危险的 shell 命令需要确认。
 	if (/bash/i.test(toolName)) {
@@ -227,6 +326,7 @@ export default function (pi: ExtensionAPI) {
 	pi.registerTool(feishuNotifyTool);
 	pi.registerTool(bubblesTaskTool);
 	pi.registerTool(bubblesStatusTool);
+	pi.registerTool(bubblesHoldingTool);
 
 	// 审批门：危险工具调用需人工确认（飞书卡片按钮 / 终端对话框）。
 	// 仅在有 UI 时启用（交互终端或 bubblesd 的 RPC 通道）；定时任务等

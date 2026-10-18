@@ -84,6 +84,37 @@ type FeishuNotifyResult struct {
 	Delivered bool `json:"delivered"`
 }
 
+type HoldingGetParams struct {
+	Ticker string `json:"ticker"`
+}
+
+// HoldingUpsertParams is a partial update: nil fields keep stored values.
+// Name is required when the holding does not exist yet.
+type HoldingUpsertParams struct {
+	Ticker     string   `json:"ticker"`
+	Name       *string  `json:"name,omitempty"`
+	Market     *string  `json:"market,omitempty"`
+	Qty        *float64 `json:"qty,omitempty"`
+	Cost       *float64 `json:"cost,omitempty"`
+	State      *string  `json:"state,omitempty"`
+	Hypothesis *string  `json:"hypothesis,omitempty"`
+	StopLoss   *float64 `json:"stop_loss,omitempty"`
+	Target     *float64 `json:"target,omitempty"`
+	ReviewDate *string  `json:"review_date,omitempty"`
+	Decision   *string  `json:"decision,omitempty"`
+	Notes      *string  `json:"notes,omitempty"`
+}
+
+type HoldingResult struct {
+	Created bool        `json:"created,omitempty"`
+	Holding interface{} `json:"holding,omitempty"` // model.Holding
+}
+
+type HoldingListResult struct {
+	Holdings []interface{} `json:"holdings"` // []model.Holding
+	Count    int           `json:"count"`
+}
+
 // Method names
 const (
 	MethodTaskCreate    = "task.create"
@@ -98,4 +129,8 @@ const (
 	MethodSessionStats  = "session.stats"
 	MethodSessionExport = "session.export"
 	MethodFeishuNotify  = "feishu.notify"
+	MethodHoldingList   = "holding.list"
+	MethodHoldingGet    = "holding.get"
+	MethodHoldingUpsert = "holding.upsert"
+	MethodHoldingDelete = "holding.delete"
 )

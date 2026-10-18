@@ -329,6 +329,10 @@ func (s *Scheduler) registerHandlers() {
 	s.ipc.Handle(ipc.MethodSessionStats, s.handleSessionStats)
 	s.ipc.Handle(ipc.MethodSessionExport, s.handleSessionExport)
 	s.ipc.Handle(ipc.MethodFeishuNotify, s.handleFeishuNotify)
+	s.ipc.Handle(ipc.MethodHoldingList, s.handleHoldingList)
+	s.ipc.Handle(ipc.MethodHoldingGet, s.handleHoldingGet)
+	s.ipc.Handle(ipc.MethodHoldingUpsert, s.handleHoldingUpsert)
+	s.ipc.Handle(ipc.MethodHoldingDelete, s.handleHoldingDelete)
 }
 
 func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {

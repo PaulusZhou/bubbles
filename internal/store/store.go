@@ -55,6 +55,21 @@ func (s *Store) migrate() error {
 			FOREIGN KEY (task_id) REFERENCES tasks(id)
 		);
 		CREATE INDEX IF NOT EXISTS idx_logs_task_id ON execution_logs(task_id);
+		CREATE TABLE IF NOT EXISTS holdings (
+			ticker      TEXT PRIMARY KEY,
+			name        TEXT NOT NULL,
+			market      TEXT DEFAULT '',
+			qty         REAL DEFAULT NULL,
+			cost        REAL DEFAULT NULL,
+			state       TEXT DEFAULT 'holding',
+			hypothesis  TEXT DEFAULT '',
+			stop_loss   REAL DEFAULT NULL,
+			target      REAL DEFAULT NULL,
+			review_date TEXT DEFAULT '',
+			decision    TEXT DEFAULT '',
+			notes       TEXT DEFAULT '',
+			updated_at  DATETIME NOT NULL
+		);
 	`)
 	return err
 }

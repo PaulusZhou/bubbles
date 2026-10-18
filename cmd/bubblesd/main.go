@@ -146,6 +146,12 @@ func main() {
 				return fch.HandleReforkCommand(ctx, ch, msg)
 			})
 
+			// 注册 /holding 命令：查看与修改持仓（SQLite 持仓库）
+			holdingHandler := func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
+				return feishu.HandleHoldingCommand(ctx, ch, msg, s)
+			}
+			fch.RegisterCommand("/holding", holdingHandler)
+
 			// 注册 /cron-new 命令：发送创建任务的表单卡片
 			fch.RegisterCommand("/cron-new", func(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage) error {
 				cardJSON := feishu.BuildNewTaskCardJSON()
@@ -169,6 +175,8 @@ func main() {
 					"**任务管理**\n" +
 					"• /cron — 查看所有定时任务列表，支持暂停、恢复、删除操作\n" +
 					"• /cron-new — 创建新的定时任务，通过表单设置频率和任务描述\n\n" +
+					"**持仓管理**\n" +
+					"• /holding — 查看持仓列表；/holding 显示/新增/修改/删除 — 管理持仓（详见 /holding 帮助）\n\n" +
 					"**其他**\n" +
 					"• /help — 显示此帮助信息\n\n" +
 					"---\n" +

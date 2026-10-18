@@ -9,6 +9,7 @@
 | `feishu_notify` | 工具 | 通过 bubblesd 向飞书发送文本通知（`feishu.notify`） |
 | `bubbles_task` | 工具 | 创建 / 查询 / 立即运行定时任务（`task.create` / `task.list` / `task.run`） |
 | `bubbles_status` | 工具 | 查询 bubblesd 状态（`daemon.status`） |
+| `bubbles_holding` | 工具 | 查看 / 新增 / 修改 / 删除持仓（`holding.list/get/upsert/delete`） |
 | `/bubbles` | 命令 | 在会话里查看 daemon 状态 |
 
 ## 安装
@@ -37,6 +38,7 @@ pi 会在执行中调用 `feishu_notify` 推送进度、用 `bubbles_task` 注�
 
 - **审批门**：扩展会对危险工具调用发起确认（显式声明 `destructiveHint` 的工具，以及匹配危险模式的 bash 命令，如 `rm -rf`、`sudo`、`git push --force` 等）。在 bubblesd 的 RPC 通道下，确认会变成**飞书卡片按钮**（✅允许 / ❌拒绝）；在交互终端下是原生对话框；定时任务等无 UI 场景保持自动执行。
 - `bubbles_task` 标记为 `destructiveHint: true`，每次调用都会要求确认。
+- `bubbles_holding` 的 `upsert` / `delete` 写操作同样要求确认；只读的 `list` / `get` 直接放行。
 - 扩展与 pi 进程同权限运行，仅加载可信来源的扩展。
 
 ## 会话分支（重新回答）
