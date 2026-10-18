@@ -99,6 +99,77 @@ func TestHandleTaskCreate_WithSchedule(t *testing.T) {
 	}
 }
 
+func TestHandleTaskCreate_SixFieldSchedule(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	params := ipc.CreateTaskParams{
+		Name:     "hourly scan",
+		Prompt:   "scan",
+		Schedule: "0 */1 9-15 * * 1-5",
+	}
+	raw, _ := json.Marshal(params)
+
+	result, err := sched.handleTaskCreate(raw)
+	if err != nil {
+		t.Fatalf("handleTaskCreate with 6-field schedule: %v", err)
+	}
+
+	taskResult := result.(ipc.TaskResult)
+	if taskResult.NextRunAt == "" {
+		t.Error("expected non-empty NextRunAt for 6-field cron task")
+	}
+}
+
+func TestHandleTaskCreate_InvalidSchedule(t *testing.T) {
+	sched, _, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	params := ipc.CreateTaskParams{
+		Name:     "bad cron",
+		Prompt:   "p",
+		Schedule: "not a cron",
+	}
+	raw, _ := json.Marshal(params)
+
+	if _, err := sched.handleTaskCreate(raw); err == nil {
+		t.Fatal("expected error for invalid schedule, got nil")
+	}
+}
+
+func TestHandleTaskCreate_BurstUniqueIDs(t *testing.T) {
+	sched, s, cleanup := newTestScheduler(t)
+	defer cleanup()
+
+	const n = 20
+	seen := make(map[string]bool, n)
+	for i := 0; i < n; i++ {
+		params := ipc.CreateTaskParams{
+			Name:   fmt.Sprintf("burst %d", i),
+			Prompt: "p",
+		}
+		raw, _ := json.Marshal(params)
+
+		result, err := sched.handleTaskCreate(raw)
+		if err != nil {
+			t.Fatalf("handleTaskCreate #%d: %v", i, err)
+		}
+		id := result.(ipc.TaskResult).ID
+		if seen[id] {
+			t.Fatalf("duplicate task ID %q at #%d", id, i)
+		}
+		seen[id] = true
+	}
+
+	tasks, err := s.ListTasks()
+	if err != nil {
+		t.Fatalf("ListTasks: %v", err)
+	}
+	if len(tasks) != n {
+		t.Errorf("stored tasks = %d, want %d", len(tasks), n)
+	}
+}
+
 func TestHandleTaskCreate_WithRunAt_LocalTime(t *testing.T) {
 	sched, _, cleanup := newTestScheduler(t)
 	defer cleanup()

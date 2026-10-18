@@ -50,7 +50,9 @@ SQLite via `mattn/go-sqlite3` (requires CGO). WAL mode, 5s busy timeout. Auto-mi
 
 Holdings (portfolio positions) live in the `holdings` table (`internal/store/holdings.go`, ticker PK with qty/cost/state/hypothesis/stop_loss/target/review_date/decision). Three access paths: CLI `bubbles holding list|get|set|rm` (`internal/cli/holding.go`), Feishu `/holding` command (`internal/feishu/holding.go`, `/holding 修改 HK.01810 成本=31.3` style key=value edits, destructive deletes need `确认`), and the pi `bubbles_holding` tool. `holding.upsert` is a partial update (omitted fields keep stored values; `name` required on create).
 
-Task IDs are time-based: `task_YYYYMMDDHHmmss` (potential collision if two tasks created within the same second). ExecutionLog IDs use UUIDs.
+Task IDs are time-based with a random suffix: `task_YYYYMMDDHHmmss_xxxxxxxx` (collision-safe even when creating multiple tasks within the same second). ExecutionLog IDs use UUIDs.
+
+Cron schedules accept both 5-field (`分 时 日 月 周`, e.g. `0 9 * * *`) and 6-field with seconds (`秒 分 时 日 月 周`, e.g. `0 */1 9-15 * * 1-5`) expressions; invalid schedules are rejected at `task.create` time.
 
 ### Configuration
 `~/.bubbles/config.yaml` (YAML). Env vars override: `FEISHU_APP_ID`, `FEISHU_APP_SECRET`, `BUBBLES_AGENT`, `CLAUDE_PATH`, `PI_PATH`, `BUBBLES_PI_MODEL`, `BUBBLES_DATA_DIR`, `BUBBLES_PI_RPC_BEHAVIOR`. Agent selection: `agent: claude|pi` with per-agent CLI paths (`claude_path`, `pi_path`) and an optional `pi_model` (passed to `pi --model`). pi chat tuning: `pi_rpc_behavior` (`steer` | `follow_up`), `pi_rpc_idle_minutes` (RPC session idle TTL, default 30). See `internal/config/config.go`.

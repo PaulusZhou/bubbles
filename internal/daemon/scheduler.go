@@ -2,11 +2,13 @@ package daemon
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -69,9 +71,22 @@ type Scheduler struct {
 	feishuNotifier FeishuNotifier
 }
 
+// cronParser 同时接受标准 5 段 cron（分 时 日 月 周）和带秒的 6 段 cron
+// （秒 分 时 日 月 周），如 "0 9 * * *" 与 "0 */1 9-15 * * 1-5"。
+var cronParser = cron.NewParser(cron.SecondOptional | cron.Minute | cron.Hour |
+	cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+
+// newTaskID 生成按时间排序且带随机后缀的任务 ID，
+// 格式 task_YYYYMMDDHHmmss_xxxxxxxx，避免同一秒批量创建任务时主键冲突。
+func newTaskID() string {
+	var b [4]byte
+	_, _ = rand.Read(b[:])
+	return fmt.Sprintf("task_%s_%02x%02x%02x%02x", time.Now().Format("20060102150405"), b[0], b[1], b[2], b[3])
+}
+
 func NewScheduler(s *store.Store, cfg *config.Config) *Scheduler {
 	return &Scheduler{
-		cron:     cron.New(), // 标准 5 段 cron
+		cron:     cron.New(cron.WithParser(cronParser)), // 5 段或 6 段（带秒）cron
 		store:    s,
 		executor: NewExecutor(s, cfg),
 		cfg:      cfg,
@@ -219,7 +234,15 @@ func (s *Scheduler) scheduleTask(t *model.Task) {
 	s.entryMapMu.Unlock()
 
 	// 计算下次执行时间
-	sched, _ := cron.ParseStandard(schedule)
+	sched, err := cronParser.Parse(schedule)
+	if err != nil {
+		slog.Error("scheduler: failed to parse schedule for next run",
+			"task_id", t.ID,
+			"schedule", schedule,
+			"error", err,
+		)
+		return
+	}
 	nextRun := sched.Next(time.Now())
 	s.store.UpdateTaskNextRun(t.ID, nextRun)
 
@@ -349,13 +372,32 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		"prompt_len", len(p.Prompt),
 	)
 
+	if p.Schedule != "" {
+		if _, err := cronParser.Parse(p.Schedule); err != nil {
+			slog.Error("ipc: task.create invalid schedule", "schedule", p.Schedule, "error", err)
+			return nil, fmt.Errorf("invalid schedule %q (use 5-field '分 时 日 月 周' or 6-field '秒 分 时 日 月 周'): %w", p.Schedule, err)
+		}
+	}
+
 	task := &model.Task{
-		ID:        fmt.Sprintf("task_%s", time.Now().Format("20060102150405")),
 		Name:      p.Name,
 		Prompt:    p.Prompt,
 		Schedule:  p.Schedule,
 		Status:    "active",
 		CreatedAt: time.Now(),
+	}
+
+	// ID 带随机后缀，同一秒批量创建也不冲突；万一冲突则换后缀重试
+	var createErr error
+	for i := 0; i < 5; i++ {
+		task.ID = newTaskID()
+		if createErr = s.store.CreateTask(task); createErr == nil {
+			break
+		}
+		if !strings.Contains(createErr.Error(), "UNIQUE constraint failed") {
+			break
+		}
+		slog.Warn("ipc: task.create id collision, retrying", "task_id", task.ID)
 	}
 
 	if p.RunAt != "" {
@@ -373,9 +415,9 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		task.NextRunAt = runAt
 	}
 
-	if err := s.store.CreateTask(task); err != nil {
-		slog.Error("ipc: task.create db error", "task_id", task.ID, "error", err)
-		return nil, fmt.Errorf("create task: %w", err)
+	if createErr != nil {
+		slog.Error("ipc: task.create db error", "task_id", task.ID, "error", createErr)
+		return nil, fmt.Errorf("create task: %w", createErr)
 	}
 	slog.Info("ipc: task.create persisted", "task_id", task.ID, "name", task.Name)
 
@@ -386,11 +428,16 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		}
 	}
 
+	nextRun := ""
+	if !task.NextRunAt.IsZero() {
+		nextRun = task.NextRunAt.Format(time.RFC3339)
+	}
+
 	slog.Info("ipc: task.create completed",
 		"task_id", task.ID,
 		"name", task.Name,
 		"status", task.Status,
-		"next_run", task.NextRunAt.Format(time.RFC3339),
+		"next_run", nextRun,
 	)
 
 	return ipc.TaskResult{
@@ -398,7 +445,7 @@ func (s *Scheduler) handleTaskCreate(raw json.RawMessage) (interface{}, error) {
 		Name:      task.Name,
 		Status:    task.Status,
 		Schedule:  task.Schedule,
-		NextRunAt: task.NextRunAt.Format(time.RFC3339),
+		NextRunAt: nextRun,
 	}, nil
 }
 
