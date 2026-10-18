@@ -16,6 +16,7 @@ import (
 // claudeSDKMessage represents a single event in Claude's stream-json output.
 type claudeSDKMessage struct {
 	Type       string          `json:"type"`
+	Subtype    string          `json:"subtype,omitempty"`
 	Message    json.RawMessage `json:"message,omitempty"`
 	SessionID  string          `json:"session_id,omitempty"`
 	IsError    bool            `json:"is_error,omitempty"`
@@ -211,6 +212,8 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, re
 		return nil
 	}
 
+	sessionStarted := false
+
 	scanner := bufio.NewScanner(stdout)
 	scanner.Buffer(make([]byte, 0, 64*1024), 10*1024*1024) // 初始 64KB，最大 10MB
 
@@ -220,12 +223,15 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, re
 			continue
 		}
 
-		slog.Info("claude stream: raw message", "message", line)
-
 		var msg claudeSDKMessage
 		if err := json.Unmarshal([]byte(line), &msg); err != nil {
 			slog.Warn("claude stream: failed to unmarshal message", "error", err, "raw", line)
 			continue
+		}
+
+		// thinking_tokens messages are verbose but not useful to log
+		if !(msg.Type == "system" && msg.Subtype == "thinking_tokens") {
+			slog.Info("claude stream: raw message", "message", line)
 		}
 
 		switch msg.Type {
@@ -259,7 +265,8 @@ func ClaudeStreamWithEvents(ctx context.Context, claudePath, prompt, workDir, re
 			// tool_result events are skipped (tool calls not displayed)
 
 		case "system":
-			if msg.SessionID != "" {
+			if msg.SessionID != "" && !sessionStarted {
+				sessionStarted = true
 				slog.Info("claude stream: session started", "session_id", msg.SessionID)
 				if err := sendEvent(StreamEvent{Type: "system", SessionID: msg.SessionID}); err != nil {
 					closeStdin()
