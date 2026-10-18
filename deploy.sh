@@ -27,10 +27,28 @@ echo "✓ 依赖齐备（git/go/cc/pi）"
 # 2) 构建 + 安装 bubbles（含启动 bubblesd）
 make install
 
-# 3) invest-system 装配（skills/agents/prompts/subagent 扩展）
+# 3) 引导 config.yaml（install.sh 以 work_dir 为目标工作区，必须先于装配）
+mkdir -p "$HOME/.bubbles"
+if [ ! -f "$HOME/.bubbles/config.yaml" ]; then
+  cat > "$HOME/.bubbles/config.yaml" <<EOF
+# bubbles 配置（deploy.sh 引导生成，按需修改后重跑 ./deploy.sh 或 invest-system/install.sh）
+feishu_chat_id: ""             # 飞书会话 ID
+feishu_drive_folder: ""        # 云文档文件夹 token（可选）
+work_dir: $REPO                # ★ 投资工作区（skills/agents/prompts 与数据都装到这里）
+agent: pi
+pi_path: pi
+pi_model: mimo-v2.6-pro
+EOF
+  echo "✓ 已生成 ~/.bubbles/config.yaml（work_dir: $REPO）"
+else
+  echo "✓ 已有 ~/.bubbles/config.yaml（work_dir: $(python3 -c "import yaml,os;print(yaml.safe_load(open(os.path.expanduser('~/.bubbles/config.yaml'))).get('work_dir'))")）"
+fi
+echo "  ℹ 如需安装到别的工作区：改 config 的 work_dir 后重跑 ./deploy.sh"
+
+# 4) invest-system 装配（同步 .pi/{skills,agents,prompts} + 数据骨架到 work_dir）
 "$REPO/invest-system/install.sh"
 
-# 4) pi 联网能力
+# 5) pi 联网能力
 if ! pi list 2>/dev/null | grep -q "pi-web-access"; then
   echo "▶ 安装 pi-web-access ..."; pi install npm:pi-web-access
 fi
@@ -38,9 +56,9 @@ echo "✓ pi 包: $(pi list 2>/dev/null | tr '\n' ' ')"
 
 echo ""
 echo "✅ 自动步骤完成。剩余手动步骤（详见 DEPLOY.md）："
-echo "   1. ~/.bubbles/config.yaml 配置 feishu_chat_id / work_dir: $REPO"
-echo "   2. export FEISHU_APP_ID=... FEISHU_APP_SECRET=...（写入 ~/.zshrc）"
-echo "   3. 数据文档随包：invest-system/{policy.yaml,decision-log.md}（运行产出也落在此）"
-echo "   4. 录入持仓：bubbles holding set <ticker> --name ... --qty ... --cost ..."
-echo "   5. ./invest-system/create-tasks.sh 注册定时流水线"
-echo "   6. 按 DEPLOY.md 验证清单逐项检查"
+echo "   1. ~/.bubbles/config.yaml 补 feishu_chat_id（work_dir 已就位）"
+echo "   2. export FEISHU_APP_ID=... FEISHU_APP_SECRET=...（写入 ~/.bashrc / ~/.zshrc）"
+echo "   3. 录入持仓：bubbles holding set <ticker> --name ... --qty ... --cost ..."
+echo "   4. ./invest-system/create-tasks.sh 注册定时流水线"
+echo "   5. 云文档同步：npx @larksuite/cli@latest install && lark-cli auth login --domain drive,docs,markdown"
+echo "   6. 按 DEPLOY.md 验证清单逐项检查（skill 验证用 pi --print --approve）"
