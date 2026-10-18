@@ -42,20 +42,49 @@ else
   echo "✓ subagent 扩展已存在"
 fi
 
-# 1) 同步最新 skills / agents / prompts 到工作区（代码性质，覆盖为最新）
+# 1) 同步最新 skills / agents / prompts 到工作区 .pi/（pi 项目级标准布局，覆盖为最新）
+PI_WORK="$WORK_DIR/.pi"
 sync_dir() {
-  local src="$KIT/$1" dst="$WORK_DIR/$1"
+  local src="$KIT/$1" dst="$PI_WORK/$1"
   if command -v rsync >/dev/null 2>&1; then
     mkdir -p "$dst"
     rsync -a --delete "$src/" "$dst/"
   else
-    rm -rf "$dst" && cp -R "$src" "$dst"
+    mkdir -p "$PI_WORK" && rm -rf "$dst" && cp -R "$src" "$dst"
   fi
 }
 sync_dir skills
 sync_dir agents
 sync_dir prompts
-echo "✓ skills/agents/prompts 已更新到工作区（覆盖为包内最新）"
+echo "✓ .pi/{skills,agents,prompts} 已更新到工作区（覆盖为包内最新）"
+
+# 1b) 清理旧版用户级软链/注册（避免与 .pi 项目发现重复注册）
+python3 - "$PI_DIR" "$KIT" "$WORK_DIR" <<'PYEOF2'
+import json, os, sys
+pi_dir, kit, work = sys.argv[1], sys.argv[2], sys.argv[3]
+removed = 0
+for sub in ("skills", "prompts", "agents"):
+    d = os.path.join(pi_dir, sub)
+    if not os.path.isdir(d):
+        continue
+    for name in os.listdir(d):
+        p = os.path.join(d, name)
+        if os.path.islink(p):
+            tgt = os.readlink(p)
+            if tgt.startswith(kit) or tgt.startswith(work):
+                os.remove(p)
+                removed += 1
+print(f"✓ 清理旧用户级软链 {removed} 个")
+sp = os.path.join(pi_dir, "settings.json")
+if os.path.exists(sp):
+    d = json.load(open(sp))
+    skills = d.get("skills", [])
+    kept = [x for x in skills if not (x.startswith(kit) or x.startswith(work))]
+    if kept != skills:
+        d["skills"] = kept
+        json.dump(d, open(sp, "w"), ensure_ascii=False, indent=2)
+        print("✓ settings.json 已移除旧 skills 注册（改由 .pi 项目发现）")
+PYEOF2
 
 # 2) 数据文件：只在缺失时补默认（policy.yaml / decision-log.md 是数据，不覆盖）
 [ -f "$WORK_DIR/policy.yaml" ] || cp "$KIT/policy.yaml" "$WORK_DIR/policy.yaml"
@@ -63,33 +92,11 @@ echo "✓ skills/agents/prompts 已更新到工作区（覆盖为包内最新）
 mkdir -p "$WORK_DIR"/{stocks,holding/daily,industry,events,review,rss-digest,_snapshots,mx_data/output}
 echo "✓ 数据骨架: ${WORK_DIR}（policy.yaml / decision-log.md 存在则保留）"
 
-# 3) pi 装配：软链指向工作区（安装即生效，重新 install 刷新）
-mkdir -p "$PI_DIR/skills" "$PI_DIR/prompts" "$PI_DIR/agents"
-for d in "$WORK_DIR"/skills/*/; do
-  ln -sfn "${d%/}" "$PI_DIR/skills/$(basename "$d")"
-done
-for f in "$WORK_DIR"/prompts/*.md; do
-  ln -sf "$f" "$PI_DIR/prompts/$(basename "$f")"
-done
-for f in "$WORK_DIR"/agents/*.md; do
-  ln -sf "$f" "$PI_DIR/agents/$(basename "$f")"
-done
-echo "✓ pi 装配: $(ls "$PI_DIR/skills" | wc -l | tr -d ' ') skills / $(ls "$PI_DIR/agents" | wc -l | tr -d ' ') agents 已链接"
-
-# 4) settings.json：skills 指向工作区
-python3 - "$WORK_DIR" <<'EOF'
-import json, os, sys
-work = os.path.abspath(sys.argv[1])
-p = os.path.expanduser("~/.pi/agent/settings.json")
-d = json.load(open(p)) if os.path.exists(p) else {}
-d["skills"] = [os.path.join(work, "skills")]
-json.dump(d, open(p, "w"), ensure_ascii=False, indent=2)
-print("✓ settings.json skills →", d["skills"][0])
-EOF
-
 echo ""
-echo "✅ 安装完成。验证："
-echo "   pi --print -p '列出你系统提示里所有 skill 的 name，逗号分隔'"
+echo "✅ 安装完成（.pi 项目布局）。"
+echo "   · 定时任务无需处理：bubblesd 以 --approve 启动 pi，项目资源自动受信"
+echo "   · 交互使用：首次在工作区运行 pi 时同意信任提示（或 pi --approve）"
+echo "   验证：pi --print --approve -p '列出你系统提示里所有 skill 的 name，逗号分隔'"
 echo "   预期 13 个：futuapi holding-decision-review ima-skill industry-deep-analysis"
 echo "   industry-monitor multi-tavily-search mx-data mx-moni mx-search"
 echo "   private-company-analysis signal-monitor stock-buying-evaluation stock-trade-review"
