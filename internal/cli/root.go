@@ -24,4 +24,8 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 	rootCmd.AddCommand(logsCmd)
 	rootCmd.AddCommand(sessionCmd)
+	rootCmd.AddCommand(holdingCmd)
+	rootCmd.AddCommand(uploadCmd)
+	rootCmd.AddCommand(loginCmd)
+	rootCmd.AddCommand(archiveCmd)
 }

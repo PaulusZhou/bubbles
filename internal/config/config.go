@@ -21,17 +21,18 @@ func DefaultDataDir() string {
 
 // Config holds application configuration.
 type Config struct {
-	FeishuAppID      string `yaml:"feishu_app_id"`
-	FeishuAppSecret  string `yaml:"feishu_app_secret"`
-	FeishuChatID     string `yaml:"feishu_chat_id"`
-	Agent            string `yaml:"agent"`               // "claude" (default) or "pi"
-	ClaudePath       string `yaml:"claude_path"`         // claude CLI path (agent: claude)
-	PiPath           string `yaml:"pi_path"`             // pi CLI path (agent: pi)
-	PiModel          string `yaml:"pi_model"`            // optional model override passed to pi --model
-	PiRPCBehavior    string `yaml:"pi_rpc_behavior"`     // mid-run message behavior: "steer" (default) or "follow_up"
-	PiRPCIdleMinutes int    `yaml:"pi_rpc_idle_minutes"` // idle TTL for pi RPC sessions in minutes, default 30
-	DataDir          string `yaml:"data_dir"`
-	WorkDir          string `yaml:"work_dir"`
+	FeishuAppID       string `yaml:"feishu_app_id"`
+	FeishuAppSecret   string `yaml:"feishu_app_secret"`
+	FeishuChatID      string `yaml:"feishu_chat_id"`
+	FeishuDriveFolder string `yaml:"feishu_drive_folder"` // 云文档目标文件夹 token（bubbles upload 用）
+	Agent             string `yaml:"agent"`               // "claude" (default) or "pi"
+	ClaudePath        string `yaml:"claude_path"`         // claude CLI path (agent: claude)
+	PiPath            string `yaml:"pi_path"`             // pi CLI path (agent: pi)
+	PiModel           string `yaml:"pi_model"`            // optional model override passed to pi --model
+	PiRPCBehavior     string `yaml:"pi_rpc_behavior"`     // mid-run message behavior: "steer" (default) or "follow_up"
+	PiRPCIdleMinutes  int    `yaml:"pi_rpc_idle_minutes"` // idle TTL for pi RPC sessions in minutes, default 30
+	DataDir           string `yaml:"data_dir"`
+	WorkDir           string `yaml:"work_dir"`
 }
 
 // configPath returns the path to the config file.
@@ -73,6 +74,9 @@ func Load() (*Config, error) {
 	}
 	if v := os.Getenv("FEISHU_APP_SECRET"); v != "" {
 		cfg.FeishuAppSecret = v
+	}
+	if v := os.Getenv("FEISHU_DRIVE_FOLDER"); v != "" {
+		cfg.FeishuDriveFolder = v
 	}
 	if v := os.Getenv("BUBBLES_AGENT"); v != "" {
 		cfg.Agent = v
