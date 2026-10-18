@@ -1,0 +1,42 @@
+# policy.yaml — 投资政策声明 v2
+# 由 risk_check.py 机器校验。数值生效日 2026-10-18（金额单位：人民币元）
+
+goals:                              # 仅作进攻性参考，不参与硬校验（防目标诱导追高）
+  annual_return_target: 0.20        # 年化收益目标 20%（Paulus 2026-10-18 定值）
+  profit_target_cny: 400000         # 派生值：20% × 200万，可单独调整
+  max_drawdown: 0.15
+
+limits:
+  max_positions: 8
+  max_watchlist: 15
+  max_total_investment_cny: 2000000 # 200 万人民币（Paulus 2026-10-18 定值）
+  min_cash_ratio: 0.30
+  max_single_position_pct: 0.20
+  max_industry_pct: 0.30
+  max_correlated_cluster_pct: 0.50 # 同一驱动逻辑簇合计（如"中国智造+科技"），防伪分散
+
+# PE(TTM) 检查带按股票类型分类——禁用单一 20-80 带（周期股低 PE 陷阱已实证：赣锋 12x）
+valuation_bands:
+  growth:      [30, 80]             # 成长期：营收/利润高增速
+  value:       [8, 25]              # 价值型
+  cyclical:    disabled             # 周期股：禁用 PE 带，用 PB/商品价格分位判断
+  speculative: disabled             # 纯概念标的：默认否决，除非人工豁免留痕
+
+rules:
+  min_days_between_same_buy: 30
+  review_after_buy_days: 30         # 30 天复核只核对驱动因子/证伪条件，【不评盈亏】
+  outcome_window_days: 365          # outcome 于 12 个月评定（防结果偏差）
+  post_sell_review_days: 60         # 卖出后 60 天回访"卖得对不对"
+  sell_stop_loss:
+    default_pct: -0.20
+    method: "2×ATR(60日) 与 default_pct 取更宽者"   # 波动率调整，高波动股不被噪音震出
+    hard_max_pct: -0.35             # 任何情况不深于此
+  decision_cooldown_days: 7         # 同标的两次决策书冷却（止损/证伪强制触发除外）
+  circuit_breaker:                  # 极端行情熔断
+    portfolio_daily_drawdown: -0.08
+    market_daily_drawdown: -0.05
+    action: "冻结新开仓 24h；卖出决策需 bear 二审 + 人工拍板"
+
+sandbox:                            # 新流程沙盒期（mx-moni/纸上组合验证决策质量）
+  mode: true                        # true 时买卖只落库标记不推真仓；连续 2 次月度审计纪律 A 级后置 false
+  min_reviews_to_exit: 2

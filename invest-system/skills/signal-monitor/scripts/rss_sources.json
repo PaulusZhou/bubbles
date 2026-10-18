@@ -1,0 +1,112 @@
+{
+  "version": "2026-03-17",
+  "description": "YMOS-V2 RSS 信息源配置。仅包含免费开放源（不含需 RSSHub 搭建的源）。用户可自行增减。",
+  "categories": ["美股", "宏观", "科技", "Crypto", "深度洞察"],
+  "sources": [
+    {
+      "name": "Bloomberg Markets",
+      "url": "https://feeds.bloomberg.com/markets/news.rss",
+      "category": "美股",
+      "priority": "high",
+      "note": "华尔街资金流向，免费开放"
+    },
+    {
+      "name": "Bloomberg Tech",
+      "url": "https://feeds.bloomberg.com/technology/news.rss",
+      "category": "科技",
+      "priority": "high",
+      "note": "巨头动向与科技趋势"
+    },
+    {
+      "name": "Bloomberg Crypto",
+      "url": "https://feeds.bloomberg.com/crypto/news.rss",
+      "category": "Crypto",
+      "priority": "high",
+      "note": "Crypto 主流视角"
+    },
+    {
+      "name": "Bloomberg Opinion",
+      "url": "https://www.bloomberg.com/opinion/authors/ARbTQlRLRjE/matthew-s-levine.rss",
+      "category": "深度洞察",
+      "priority": "high",
+      "note": "Matt Levine 金融深度评论"
+    },
+    {
+      "name": "CNBC Markets",
+      "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258",
+      "category": "美股",
+      "priority": "high",
+      "note": "CNBC 市场动态"
+    },
+    {
+      "name": "CNBC Finance",
+      "url": "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664",
+      "category": "宏观",
+      "priority": "medium",
+      "note": "CNBC 财经"
+    },
+    {
+      "name": "Seeking Alpha Editors' Picks",
+      "url": "https://seekingalpha.com/tag/editors-picks.xml",
+      "category": "深度洞察",
+      "priority": "high",
+      "note": "美股个股深度逻辑（摘要免费）"
+    },
+    {
+      "name": "Stratechery",
+      "url": "https://stratechery.com/feed/",
+      "category": "深度洞察",
+      "priority": "high",
+      "note": "商业模式分析天花板（摘要免费）"
+    },
+    {
+      "name": "FT Tech",
+      "url": "https://www.ft.com/technology?format=rss",
+      "category": "科技",
+      "priority": "medium",
+      "note": "欧洲/全球科技视角"
+    },
+    {
+      "name": "FT Markets",
+      "url": "https://www.ft.com/markets?format=rss",
+      "category": "美股",
+      "priority": "medium",
+      "note": "全球市场动态与交易信号"
+    },
+    {
+      "name": "The Economist Finance",
+      "url": "https://www.economist.com/finance-and-economics/rss.xml",
+      "category": "宏观",
+      "priority": "medium",
+      "note": "全球宏观定调与经济趋势"
+    },
+    {
+      "name": "TechCrunch",
+      "url": "https://techcrunch.com/feed/",
+      "category": "科技",
+      "priority": "medium",
+      "note": "一级市场热点与风投动态"
+    },
+    {
+      "name": "TechInAsia",
+      "url": "https://www.techinasia.com/feed",
+      "category": "科技",
+      "priority": "low",
+      "note": "东南亚科技与创投"
+    },
+    {
+      "name": "Nvidia Blog",
+      "url": "https://blogs.nvidia.com/feed/",
+      "category": "科技",
+      "priority": "low",
+      "note": "科技巨头官方技术博客"
+    },
+    {
+      "name": "The Verge",
+      "url": "https://www.theverge.com/rss/index.xml",
+      "category": "科技",
+      "priority": "low",
+      "note": "消费电子与产品趋势"
+    }
+  ]
+}

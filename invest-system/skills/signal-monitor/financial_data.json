@@ -1,0 +1,2554 @@
+{
+  "sources": [
+    "Bloomberg Markets",
+    "Bloomberg Tech",
+    "Bloomberg Crypto",
+    "Bloomberg Opinion",
+    "CNBC Markets",
+    "CNBC Finance",
+    "Seeking Alpha Editors' Picks",
+    "Stratechery",
+    "FT Tech",
+    "FT Markets",
+    "The Economist Finance",
+    "TechCrunch",
+    "TechInAsia",
+    "Nvidia Blog",
+    "The Verge"
+  ],
+  "fetched_at": "2026-04-01T12:45:20.252358+00:00",
+  "time_range_days": 1.0,
+  "count": 181,
+  "sources_ok": 14,
+  "sources_fail": 1,
+  "sources_blocked_403": 0,
+  "categories_summary": {
+    "美股": 55,
+    "科技": 106,
+    "Crypto": 6,
+    "深度洞察": 3,
+    "宏观": 11
+  },
+  "data": [
+    {
+      "title": "<strong>Viktor Shvets on Castles without Moats and lots of Sharks</strong>",
+      "link": "https://www.bloomberg.com/news/newsletters/2026-04-01/viktor-shvets-on-castles-without-moats-and-lots-of-sharks",
+      "pub_date": "Wed, 01 Apr 2026 12:40:17 GMT",
+      "categories": [],
+      "description": "How to invest in an era of zero cost marginal costs.",
+      "content": "How to invest in an era of zero cost marginal costs.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Mexico Pension Giant Afore Sura Sees Banamex Deal as One of Many in Sector",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/mexico-pension-giant-afore-sura-sees-banamex-deal-as-one-of-many-in-sector-cio",
+      "pub_date": "Wed, 01 Apr 2026 12:30:00 GMT",
+      "categories": [],
+      "description": "One of the largest players in Mexico’s booming pension fund system is eyeing more investments in the country’s financial sector after purchasing a stake in Citigroup Inc.’s retail bank Grupo Financiero Banamex.",
+      "content": "One of the largest players in Mexico’s booming pension fund system is eyeing more investments in the country’s financial sector after purchasing a stake in Citigroup Inc.’s retail bank Grupo Financiero Banamex.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Stocks and Bonds Charge Higher as Oil Slides: Markets Wrap",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/asian-stocks-set-to-track-us-rally-on-iran-hopes-markets-wrap",
+      "pub_date": "Tue, 31 Mar 2026 22:28:13 GMT",
+      "categories": [],
+      "description": "US stocks pushed higher as optimism grew that the war in the Middle East is nearing a conclusion, pulling Brent briefly below $100 a barrel and lifting bonds. The dollar posted its biggest drop in a week.",
+      "content": "US stocks pushed higher as optimism grew that the war in the Middle East is nearing a conclusion, pulling Brent briefly below $100 a barrel and lifting bonds. The dollar posted its biggest drop in a week.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Copper Rises as Trump Floats Timeline for US to End Iran Attacks",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/copper-rises-as-trump-floats-timeline-for-us-to-end-iran-attacks",
+      "pub_date": "Wed, 01 Apr 2026 03:37:43 GMT",
+      "categories": [],
+      "description": "Copper rose after US President Donald Trump said the war on Iran could end within two to three weeks, sparking a relief rally for riskier assets battered by global growth fears.",
+      "content": "Copper rose after US President Donald Trump said the war on Iran could end within two to three weeks, sparking a relief rally for riskier assets battered by global growth fears.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Record Net Bullish Bets on European Gas Add to Price Swings",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/record-net-bullish-bets-on-european-gas-add-to-price-swings",
+      "pub_date": "Wed, 01 Apr 2026 12:15:46 GMT",
+      "categories": [
+        "NYS:BLSH"
+      ],
+      "description": "Funds and other speculators boosted their net long positions in European natural gas to a record high before this week’s selloff in energy markets.",
+      "content": "Funds and other speculators boosted their net long positions in European natural gas to a record high before this week’s selloff in energy markets.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Iran War: Stocks Rally Ahead of Trump Speech on Mideast Conflict | The Pulse 4/1",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/the-pulse-4-1-2026-video",
+      "pub_date": "Wed, 01 Apr 2026 12:12:50 GMT",
+      "categories": [],
+      "description": "\"The Pulse With Francine Lacqua\" is all about conversations with high profile guests in the beating heart of global business, economics, finance and politics. Based in London, we go wherever the story is, bringing you exclusive interviews and market-moving scoops.\n\nToday's guests: \nJanet Henry, HSBC, Global Chief Economist; Luigi Lovaglio, Banca Monte dei Paschi di Siena, CEO Candidate; Chris Bradley, McKinsey, Senior Partner, McKinsey Global Institute Director; Bleddyn Bowen, Durham University, Associate Professor of Astropolitics. \n (Source: Bloomberg)",
+      "content": "\"The Pulse With Francine Lacqua\" is all about conversations with high profile guests in the beating heart of global business, economics, finance and politics. Based in London, we go wherever the story is, bringing you exclusive interviews and market-moving scoops.\n\nToday's guests: \nJanet Henry, HSBC, Global Chief Economist; Luigi Lovaglio, Banca Monte dei Paschi di Siena, CEO Candidate; Chris Bradley, McKinsey, Senior Partner, McKinsey Global Institute Director; Bleddyn Bowen, Durham University, Associate Professor of Astropolitics. \n (Source: Bloomberg)",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Commodity Windfalls Are Rolling Into Russia From War in Iran",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/commodity-windfalls-are-rolling-into-russia-from-war-in-iran",
+      "pub_date": "Wed, 01 Apr 2026 11:57:52 GMT",
+      "categories": [],
+      "description": "The Iran war has generated billions of dollars of additional oil revenues for Russia, but Moscow’s windfall extends well beyond crude to gas, grain, aluminum and fertilizers.",
+      "content": "The Iran war has generated billions of dollars of additional oil revenues for Russia, but Moscow’s windfall extends well beyond crude to gas, grain, aluminum and fertilizers.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Massive Short Squeeze Fogs Market’s View on Iran Peace Prospects",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/wall-street-traders-say-positioning-not-peace-is-driving-stocks",
+      "pub_date": "Wed, 01 Apr 2026 10:13:50 GMT",
+      "categories": [],
+      "description": "At first blush, the biggest rally for US stocks in more than 10 months suggests investors on Tuesday were suddenly overwhelmed by optimism that the Iran war would be ending soon. Yet there was something else at play that obscures how confident investors really are that peace is on the horizon: A massive short squeeze.",
+      "content": "At first blush, the biggest rally for US stocks in more than 10 months suggests investors on Tuesday were suddenly overwhelmed by optimism that the Iran war would be ending soon. Yet there was something else at play that obscures how confident investors really are that peace is on the horizon: A massive short squeeze.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "US Premarket Movers: MSC, NCino, Nike, RH, Target Hospitality",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/us-stock-futures-today-msc-ncino-nike-rh-target-hospitality",
+      "pub_date": "Wed, 01 Apr 2026 11:52:43 GMT",
+      "categories": [
+        "NYS:NKE",
+        "NYS:RH"
+      ],
+      "description": "S&amp;P 500 Index futures rise 0.8% as of 7:46 a.m. in New York amid hopes that the war in Iran will end soon. Trump is set to address the nation with a prime time update at 9 p.m. Washington time.",
+      "content": "S&amp;P 500 Index futures rise 0.8% as of 7:46 a.m. in New York amid hopes that the war in Iran will end soon. Trump is set to address the nation with a prime time update at 9 p.m. Washington time.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "India’s Policy Options if Rupee Extends Slide From Record Lows",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/india-s-policy-options-if-rupee-extends-slide-from-record-lows",
+      "pub_date": "Wed, 01 Apr 2026 11:51:39 GMT",
+      "categories": [
+        "NSE:BOI"
+      ],
+      "description": "The Reserve Bank of India has already made a bold move to clamp down on bets against the rupee. As the step provided only a brief reprieve yet, markets are now focused on what it might do next.",
+      "content": "The Reserve Bank of India has already made a bold move to clamp down on bets against the rupee. As the step provided only a brief reprieve yet, markets are now focused on what it might do next.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "S&amp;P 500’s Weakest Performer Struggles to Escape Selling ‘Vortex’",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/s-p-500-s-weakest-performer-struggles-to-escape-selling-vortex",
+      "pub_date": "Wed, 01 Apr 2026 11:48:22 GMT",
+      "categories": [
+        "NAS:TTD"
+      ],
+      "description": "Trade Desk Inc. investors who stuck with the stock through a 15-month selloff that has left it down more than 80% will likely be waiting awhile for a rebound &mdash; if one ever materializes.",
+      "content": "Trade Desk Inc. investors who stuck with the stock through a 15-month selloff that has left it down more than 80% will likely be waiting awhile for a rebound &mdash; if one ever materializes.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "US Stock Futures Rise as US, Iran Seek Exit From Iran War",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/us-stock-futures-rise-as-us-iran-seek-exit-from-iran-war",
+      "pub_date": "Wed, 01 Apr 2026 11:46:55 GMT",
+      "categories": [],
+      "description": "US stocks rose in premarket trading on Wednesday as traders became more optimistic about US military operations in Iran ending soon.",
+      "content": "US stocks rose in premarket trading on Wednesday as traders became more optimistic about US military operations in Iran ending soon.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Gasoline at $4 Alarms US Consumers and Raises Pressure on Trump",
+      "link": "https://www.bloomberg.com/news/newsletters/2026-04-01/us-gasoline-price-back-above-4-as-trump-talks-of-ending-iran-war",
+      "pub_date": "Wed, 01 Apr 2026 11:39:41 GMT",
+      "categories": [],
+      "description": "The president talks of ending the Iran war as key price milestone is surpassed.",
+      "content": "The president talks of ending the Iran war as key price milestone is surpassed.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Morgan Stanley’s Zentner Urges Stock Picking, Warns on US Recession Risks",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/ellen-zentner-urges-stock-picking-sees-recession-risks-video",
+      "pub_date": "Wed, 01 Apr 2026 11:35:15 GMT",
+      "categories": [
+        "NYS:MS"
+      ],
+      "description": "Ellen Zentner, chief economic strategist at Morgan Stanley Wealth Management, says her firm is not “broad sellers of US equities here,” with “pockets where earnings can get better, not worse.” Zentner also sees an “uncomfortable” 40% chance of a US recession over the next 12 months. (Source: Bloomberg)",
+      "content": "Ellen Zentner, chief economic strategist at Morgan Stanley Wealth Management, says her firm is not “broad sellers of US equities here,” with “pockets where earnings can get better, not worse.” Zentner also sees an “uncomfortable” 40% chance of a US recession over the next 12 months. (Source: Bloomberg)",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Australia Plans $700 Million Support for Firms Hit by Fuel Costs",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/australian-pm-to-address-nation-as-iran-war-drives-up-fuel-costs",
+      "pub_date": "Wed, 01 Apr 2026 02:15:23 GMT",
+      "categories": [],
+      "description": "Australian Prime Minister Anthony Albanese called on citizens to save fuel and plans financial support for businesses hit by soaring energy costs in the wake of the Iran war.",
+      "content": "Australian Prime Minister Anthony Albanese called on citizens to save fuel and plans financial support for businesses hit by soaring energy costs in the wake of the Iran war.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "US Mortgage Rates March Higher to Seven-Month High of 6.57%",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/us-mortgage-rates-march-higher-to-seven-month-high-of-6-57",
+      "pub_date": "Wed, 01 Apr 2026 11:00:00 GMT",
+      "categories": [],
+      "description": "US mortgage rates climbed for a fourth straight week, rising to the highest since August and denting refinancing and home purchase activity.",
+      "content": "US mortgage rates climbed for a fourth straight week, rising to the highest since August and denting refinancing and home purchase activity.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "France, Japan Aligned on Need for Ceasefire in Iran, Macron Says",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/france-and-japan-defense-chiefs-pledge-cooperation-in-pacific",
+      "pub_date": "Wed, 01 Apr 2026 08:23:45 GMT",
+      "categories": [],
+      "description": "France and Japan agreed on the need for a ceasefire in Iran and safe passage for shipping in the region, President Emmanuel Macron said after talks with Japanese Prime Minister Sanae Takaichi over a crisis that has sent energy markets reeling and cast a cloud over global alliances and the economic outlook.",
+      "content": "France and Japan agreed on the need for a ceasefire in Iran and safe passage for shipping in the region, President Emmanuel Macron said after talks with Japanese Prime Minister Sanae Takaichi over a crisis that has sent energy markets reeling and cast a cloud over global alliances and the economic outlook.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "EU Offers Carbon Market Concessions to Tame Energy Prices",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/eu-proposes-adjusting-carbon-reserve-to-limit-price-volatility",
+      "pub_date": "Wed, 01 Apr 2026 10:02:38 GMT",
+      "categories": [],
+      "description": "The European Union proposed a limited adjustment to its carbon trading program to curb the impact of emissions costs on soaring energy bills, and pledged flexibility to avoid placing an excessive burden on industry during a transition to cleaner technologies.",
+      "content": "The European Union proposed a limited adjustment to its carbon trading program to curb the impact of emissions costs on soaring energy bills, and pledged flexibility to avoid placing an excessive burden on industry during a transition to cleaner technologies.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Grain Prices Retreat Amid Optimism of Iran War Resolution",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/grain-prices-rise-as-weak-us-plantings-add-to-iran-war-concerns",
+      "pub_date": "Wed, 01 Apr 2026 04:50:44 GMT",
+      "categories": [],
+      "description": "Grain prices fell in Chicago &mdash; reversing earlier gains &mdash; amid optimism that the war in the Middle East could be nearing an end.",
+      "content": "Grain prices fell in Chicago &mdash; reversing earlier gains &mdash; amid optimism that the war in the Middle East could be nearing an end.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "European Bonds Win Respite as Oil Drops on Iran War Hopes",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/gilts-and-european-bonds-surge-as-oil-drops-on-iran-war-optimism",
+      "pub_date": "Wed, 01 Apr 2026 07:20:05 GMT",
+      "categories": [],
+      "description": "Bonds across Europe surged as oil prices and inflation expectations eased on hopes that the Iran war may end in the coming few weeks, potentially turning the page on a torrid period for global markets.",
+      "content": "Bonds across Europe surged as oil prices and inflation expectations eased on hopes that the Iran war may end in the coming few weeks, potentially turning the page on a torrid period for global markets.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Global Stocks Rally Masks Angst Over Impact of Oil Prices",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/global-stock-euphoria-masks-underlying-angst-over-oil-prices",
+      "pub_date": "Wed, 01 Apr 2026 07:40:38 GMT",
+      "categories": [],
+      "description": "A worldwide stock surge is masking deeper anxiety over the global economic outlook that may cut the relief rally short.",
+      "content": "A worldwide stock surge is masking deeper anxiety over the global economic outlook that may cut the relief rally short.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Stocks Higher as Trump Signals Iran War Exit; Oil Slips near $100 | Bloomberg Brief 4/1/2026",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/bloomberg-brief-4-1-2026-video",
+      "pub_date": "Wed, 01 Apr 2026 11:04:40 GMT",
+      "categories": [
+        "NYS:NKE"
+      ],
+      "description": "US equity futures rise and oil hovers around $100 a barrel as President Trump says the US may end the war with Iran within two to three weeks, while Iran continues attacks across the Middle East. The president launches another swipe at allies, threatening to pull the US from NATO, according to The Telegraph. UK Prime Minister Starmer said the UK will coordinate a diplomatic push to reopen the Strait of Hormuz. Monica Defend of Amundi Investment Institute discusses the market optimism surrounding a potential end to the Iran war. (Source: Bloomberg)",
+      "content": "US equity futures rise and oil hovers around $100 a barrel as President Trump says the US may end the war with Iran within two to three weeks, while Iran continues attacks across the Middle East. The president launches another swipe at allies, threatening to pull the US from NATO, according to The Telegraph. UK Prime Minister Starmer said the UK will coordinate a diplomatic push to reopen the Strait of Hormuz. Monica Defend of Amundi Investment Institute discusses the market optimism surrounding a potential end to the Iran war. (Source: Bloomberg)",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Emerging Assets Rebound as War De-escalation Hands Sliver of Hope",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/emerging-assets-eye-first-gain-in-five-days-on-war-easing-hopes",
+      "pub_date": "Wed, 01 Apr 2026 03:20:25 GMT",
+      "categories": [],
+      "description": "Emerging-market stocks jumped the most since November 2022 as optimism about a possible end to the war in Iran spurred appetite for riskier assets globally.",
+      "content": "Emerging-market stocks jumped the most since November 2022 as optimism about a possible end to the war in Iran spurred appetite for riskier assets globally.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Saudi Oil Exports Fell by 50% in March on Iran’s Hormuz Shutdown",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/saudi-oil-exports-fell-by-50-in-march-on-iran-s-hormuz-shutdown",
+      "pub_date": "Wed, 01 Apr 2026 10:57:41 GMT",
+      "categories": [],
+      "description": "Saudi Arabia’s crude oil exports fell by half in March after Iran effectively prevented tankers from leaving the Persian Gulf, forcing the kingdom to reroute flows to its west coast.",
+      "content": "Saudi Arabia’s crude oil exports fell by half in March after Iran effectively prevented tankers from leaving the Persian Gulf, forcing the kingdom to reroute flows to its west coast.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Mozambique Surprises With Early Payment of $700 Million IMF Debt",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/mozambique-fully-repaid-701-million-imf-debt-early-bank-says",
+      "pub_date": "Wed, 01 Apr 2026 07:43:32 GMT",
+      "categories": [],
+      "description": "Mozambique has repaid about $700 million to the International Monetary Fund ahead of schedule and in full, in a surprise move that raises questions about its motivations and the status of talks over a potential new program with the lender.",
+      "content": "Mozambique has repaid about $700 million to the International Monetary Fund ahead of schedule and in full, in a surprise move that raises questions about its motivations and the status of talks over a potential new program with the lender.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "European Stocks Rally Most in a Year on Hopes Conflict Will Ease",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/european-stock-futures-jump-on-optimism-for-iran-war-conclusion",
+      "pub_date": "Wed, 01 Apr 2026 05:52:08 GMT",
+      "categories": [],
+      "description": "European stocks jumped the most in a year, recouping some of last month’s losses as hopes grew that the war in Iran is nearing an end.",
+      "content": "European stocks jumped the most in a year, recouping some of last month’s losses as hopes grew that the war in Iran is nearing an end.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Oil Recovers in Choppy Trade Ahead of Trump Speech on Iran",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/brent-oil-falls-below-100-on-optimism-iran-war-may-end",
+      "pub_date": "Wed, 01 Apr 2026 06:51:49 GMT",
+      "categories": [],
+      "description": "Oil recovered from an earlier slump in a volatile session with the focus on whether US President Donald Trump will soon declare an end to the war in Iran, with an address to the nation due later.",
+      "content": "Oil recovered from an earlier slump in a volatile session with the focus on whether US President Donald Trump will soon declare an end to the war in Iran, with an address to the nation due later.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "BYD Exports Jump On Iran Oil Shock as Domestic Slump Persists",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/byd-exports-jump-on-iran-oil-shock-as-domestic-slump-persists",
+      "pub_date": "Wed, 01 Apr 2026 10:43:16 GMT",
+      "categories": [
+        "HKG:1211"
+      ],
+      "description": "BYD Co.’s exports and overseas sales climbed 65% in March as surging oil prices due to the Iran war boosted demand for electric cars, though the automaker continues to struggle to regain momentum in the China market.",
+      "content": "BYD Co.’s exports and overseas sales climbed 65% in March as surging oil prices due to the Iran war boosted demand for electric cars, though the automaker continues to struggle to regain momentum in the China market.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Iran War Risk Still Priced In",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/iran-war-risk-still-priced-in-video",
+      "pub_date": "Wed, 01 Apr 2026 10:40:33 GMT",
+      "categories": [],
+      "description": "Equity and bond rebounds along with central bank expectations still have a way to go before unwinding impact of the Iran war (Source: Bloomberg)",
+      "content": "Equity and bond rebounds along with central bank expectations still have a way to go before unwinding impact of the Iran war (Source: Bloomberg)",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Three Teens Face Terrorism Charges on Foiled Paris BofA Bomb",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/three-teens-facing-terrorism-charges-over-bofa-bombing-attempt",
+      "pub_date": "Wed, 01 Apr 2026 08:36:18 GMT",
+      "categories": [
+        "NYS:BAC"
+      ],
+      "description": "French prosecutors are seeking terrorism charges against an adult and three teens aged 16-17 over a foiled bombing attack near the Bank of America Corp. office in Paris, seen as a possible retaliation to the war with Iran.",
+      "content": "French prosecutors are seeking terrorism charges against an adult and three teens aged 16-17 over a foiled bombing attack near the Bank of America Corp. office in Paris, seen as a possible retaliation to the war with Iran.",
+      "source_name": "Bloomberg Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Anthropic Accidentally Exposes System Behind Claude Code",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/anthropic-accidentally-releases-source-code-for-claude-ai-agent",
+      "pub_date": "Wed, 01 Apr 2026 02:28:31 GMT",
+      "categories": [],
+      "description": "Anthropic PBC inadvertently released internal source code behind its popular artificial intelligence-powered Claude coding assistant, raising questions about the security of an AI model developer that has built its brand on prioritizing safety.",
+      "content": "Anthropic PBC inadvertently released internal source code behind its popular artificial intelligence-powered Claude coding assistant, raising questions about the security of an AI model developer that has built its brand on prioritizing safety.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Microsoft in Talks With Chevron, Engine No. 1 Over $7 Billion Texas Power Plant",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/microsoft-in-talks-with-chevron-engine-no-1-over-7-billion-texas-power-plant",
+      "pub_date": "Tue, 31 Mar 2026 22:08:54 GMT",
+      "categories": [
+        "NMS:MSFT",
+        "NYS:CVX"
+      ],
+      "description": "Microsoft Corp. is in exclusive talks with Chevron Corp. and investment fund Engine No. 1 over a long-term deal that would underpin a giant power plant in West Texas, providing electricity to a large data center campus.",
+      "content": "Microsoft Corp. is in exclusive talks with Chevron Corp. and investment fund Engine No. 1 over a long-term deal that would underpin a giant power plant in West Texas, providing electricity to a large data center campus.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Banning Kids From Social Media Is Easier Said Than Done",
+      "link": "https://www.bloomberg.com/news/newsletters/2026-04-01/teen-social-media-bans-spread-across-europe-in-patchwork-fashion",
+      "pub_date": "Wed, 01 Apr 2026 11:02:01 GMT",
+      "categories": [
+        "NYS:SNAP"
+      ],
+      "description": "Europe lacks a unified approach to another complex tech issue",
+      "content": "Europe lacks a unified approach to another complex tech issue",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "NASA Set to Launch Astronauts to Moon for First Time in 50 years",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/nasa-set-to-launch-astronauts-to-moon-for-first-time-in-50-years",
+      "pub_date": "Wed, 01 Apr 2026 11:00:00 GMT",
+      "categories": [],
+      "description": "NASA astronauts are poised to lift off Wednesday on a 10-day journey that will slingshot them around the moon, marking humanity’s return to the lunar vicinity for the first time in more than half a century.",
+      "content": "NASA astronauts are poised to lift off Wednesday on a 10-day journey that will slingshot them around the moon, marking humanity’s return to the lunar vicinity for the first time in more than half a century.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Baidu Robotaxis Freeze Mid-Ride in Wuhan, Trap Passengers",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/baidu-robotaxis-freeze-in-wuhan-sparking-flurry-of-police-calls",
+      "pub_date": "Wed, 01 Apr 2026 03:52:45 GMT",
+      "categories": [
+        "NMS:BIDU"
+      ],
+      "description": "A number of Baidu Inc.’s Apollo Go robotaxis suddenly stopped on the streets of China’s Wuhan city on Tuesday, trapping passengers in vehicles and raising concerns about the safety and reliability of autonomous driving technology.",
+      "content": "A number of Baidu Inc.’s Apollo Go robotaxis suddenly stopped on the streets of China’s Wuhan city on Tuesday, trapping passengers in vehicles and raising concerns about the safety and reliability of autonomous driving technology.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Africa’s Biggest Fund Manager Seeks Buyer for Chicken Business",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/africa-s-biggest-fund-manager-seeks-buyer-for-chicken-business",
+      "pub_date": "Wed, 01 Apr 2026 10:31:49 GMT",
+      "categories": [],
+      "description": "Africa’s biggest fund manager is seeking a buyer for Daybreak Foods (Pty) Ltd., its wholly owned chicken business in South Africa that has been plagued by scandals and a business-rescue process.",
+      "content": "Africa’s biggest fund manager is seeking a buyer for Daybreak Foods (Pty) Ltd., its wholly owned chicken business in South Africa that has been plagued by scandals and a business-rescue process.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Google Faces Demands to Prohibit AI Videos for Kids on YouTube",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/google-faces-demands-to-prohibit-ai-videos-for-kids-on-youtube",
+      "pub_date": "Wed, 01 Apr 2026 10:01:00 GMT",
+      "categories": [
+        "NMS:GOOGL"
+      ],
+      "description": "Alphabet Inc.’s Google is facing demands from child development experts to prohibit videos created with artificial intelligence from being shown or recommended to young viewers across YouTube and YouTube Kids.",
+      "content": "Alphabet Inc.’s Google is facing demands from child development experts to prohibit videos created with artificial intelligence from being shown or recommended to young viewers across YouTube and YouTube Kids.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "The AI Video Apps Gaining Ground After OpenAI Declared Sora Dead",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/kling-ai-runway-vidu-the-ai-video-generators-set-to-replace-openai-s-sora",
+      "pub_date": "Wed, 01 Apr 2026 10:00:12 GMT",
+      "categories": [],
+      "description": "<p>Rival&nbsp;tools such as Kling AI, RunwayML and Vidu have all seen user gains in the week since OpenAI said it would shutter its Sora AI video generator.</p>",
+      "content": "<p>Rival&nbsp;tools such as Kling AI, RunwayML and Vidu have all seen user gains in the week since OpenAI said it would shutter its Sora AI video generator.</p>",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "US Government Requests for Social Media User Data Are Soaring",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/us-government-requests-for-social-media-user-data-are-soaring",
+      "pub_date": "Wed, 01 Apr 2026 10:00:00 GMT",
+      "categories": [
+        "NMS:GOOGL",
+        "NMS:META"
+      ],
+      "description": "US government requests for user data from technology companies has skyrocketed by 770% in the past decade, a new research report has concluded.",
+      "content": "US government requests for user data from technology companies has skyrocketed by 770% in the past decade, a new research report has concluded.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Rightmove Faces £1.5 Billion UK Lawsuit Over ‘Dominant’ Position",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/rightmove-faces-1-5-billion-uk-lawsuit-over-dominant-position",
+      "pub_date": "Wed, 01 Apr 2026 09:57:38 GMT",
+      "categories": [
+        "LSE:RMV"
+      ],
+      "description": "Rightmove Plc is facing a £1.5 billion ($2 billion) class action lawsuit over allegations that it abused its dominant position in the UK online property listings market, sending shares down the most in almost five months.",
+      "content": "Rightmove Plc is facing a £1.5 billion ($2 billion) class action lawsuit over allegations that it abused its dominant position in the UK online property listings market, sending shares down the most in almost five months.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Microsoft Pledges $5.5 Billion AI Investment in Singapore",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/microsoft-pledges-5-5-billion-ai-investment-in-singapore",
+      "pub_date": "Wed, 01 Apr 2026 09:53:28 GMT",
+      "categories": [
+        "NMS:MSFT"
+      ],
+      "description": "Microsoft Corp. pledged to invest $5.5 billion in Singapore through 2029 to support the country’s artificial intelligence industry, accelerating its expansion in a hub for Asia’s AI development.",
+      "content": "Microsoft Corp. pledged to invest $5.5 billion in Singapore through 2029 to support the country’s artificial intelligence industry, accelerating its expansion in a hub for Asia’s AI development.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Swiss Finance Minister Sues Over Grok’s Sexist Outburst",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/swiss-finance-minister-sues-over-grok-s-sexist-outburst",
+      "pub_date": "Wed, 01 Apr 2026 09:47:11 GMT",
+      "categories": [],
+      "description": "Swiss finance minister Karin Keller-Sutter has filed a criminal complaint after being insulted with vulgar and sexist speech by Grok, the AI chatbot featured on Elon Musk’s social media platform X.",
+      "content": "Swiss finance minister Karin Keller-Sutter has filed a criminal complaint after being insulted with vulgar and sexist speech by Grok, the AI chatbot featured on Elon Musk’s social media platform X.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "BOE Warns on Escalating Risks From AI, Fallout From Iran War",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/boe-warns-on-escalating-risks-from-ai-fallout-from-iran-war",
+      "pub_date": "Wed, 01 Apr 2026 09:30:01 GMT",
+      "categories": [],
+      "description": "Financial institutions’ use of artificial intelligence could increase rapidly and become a financial stability threat, the Bank of England warned on Wednesday, as it also called out the potential for the technology to trigger shocks in the private credit markets that ricochet more broadly.",
+      "content": "Financial institutions’ use of artificial intelligence could increase rapidly and become a financial stability threat, the Bank of England warned on Wednesday, as it also called out the potential for the technology to trigger shocks in the private credit markets that ricochet more broadly.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "OpenAI Seals $122 Billion Mega Funding Deal",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/openai-seals-122-billion-mega-funding-deal-video",
+      "pub_date": "Wed, 01 Apr 2026 09:28:13 GMT",
+      "categories": [],
+      "description": "OpenAI has reached a mega deal to raise $122 billion at an $852 billion valuation. Much of the capital comes from tech giants including Amazon, Nvidia and SoftBank. Bloomberg's Annabelle Droulers reports.\n\n (Source: Bloomberg)",
+      "content": "OpenAI has reached a mega deal to raise $122 billion at an $852 billion valuation. Much of the capital comes from tech giants including Amazon, Nvidia and SoftBank. Bloomberg's Annabelle Droulers reports.\n\n (Source: Bloomberg)",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "KKR Plans to Take Japan’s Taiyo Private in $3.2 Billion Deal",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/kkr-plans-to-take-japan-s-taiyo-private-in-3-2-billion-deal",
+      "pub_date": "Wed, 01 Apr 2026 09:15:18 GMT",
+      "categories": [
+        "NYS:KKR"
+      ],
+      "description": "KKR &amp; Co. is planning a tender offer for Taiyo Holdings Co. in a transaction valuing the Japanese firm at about ¥500 billion ($3.2 billion).",
+      "content": "KKR &amp; Co. is planning a tender offer for Taiyo Holdings Co. in a transaction valuing the Japanese firm at about ¥500 billion ($3.2 billion).",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Samsung’s Best Day Since 2001 Drives Rebound in Korean Stocks",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/samsung-sk-hynix-lift-korean-stocks-as-iran-war-end-hopes-grow",
+      "pub_date": "Wed, 01 Apr 2026 02:29:29 GMT",
+      "categories": [
+        "KSC:005930"
+      ],
+      "description": "Chipmakers drove a rebound in South Korean stocks, as hopes that the Iran war may be nearing an end revived risk appetite.",
+      "content": "Chipmakers drove a rebound in South Korean stocks, as hopes that the Iran war may be nearing an end revived risk appetite.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Iran War: Market Euphoria As Trump Envisions US Withdrawal In Weeks | Daybreak Europe 4/1/2026",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/daybreak-europe-4-1-2026-video",
+      "pub_date": "Wed, 01 Apr 2026 07:15:23 GMT",
+      "categories": [
+        "NMS:NVDA"
+      ],
+      "description": "Bloomberg Daybreak Europe is your essential morning viewing to stay ahead. Live from London, we set the agenda for your day, catching you up with overnight markets news from the US and Asia. \n\nOn today's show, global stocks rally after the US President said he sees the war on Iran ending within two to three weeks. Donald Trump suggests the US has largely accomplished its military goals, and will leave it to other countries to resolve issues with the Strait of Hormuz. The Wall Street Journal reports that the UAE is lobbying for a military coalition to forcibly reopen the Strait.\n\nAlso on the programme, OpenAI hits a $852 billion valuation after it raised $122 billion in its largest funding round on record. Amazon, Nvidia and SoftBank are providing the bulk of the financing, with Amazon's $35 billion investment contingent on OpenAI going public or achieving artificial general intelligence. (Source: Bloomberg)",
+      "content": "Bloomberg Daybreak Europe is your essential morning viewing to stay ahead. Live from London, we set the agenda for your day, catching you up with overnight markets news from the US and Asia. \n\nOn today's show, global stocks rally after the US President said he sees the war on Iran ending within two to three weeks. Donald Trump suggests the US has largely accomplished its military goals, and will leave it to other countries to resolve issues with the Strait of Hormuz. The Wall Street Journal reports that the UAE is lobbying for a military coalition to forcibly reopen the Strait.\n\nAlso on the programme, OpenAI hits a $852 billion valuation after it raised $122 billion in its largest funding round on record. Amazon, Nvidia and SoftBank are providing the bulk of the financing, with Amazon's $35 billion investment contingent on OpenAI going public or achieving artificial general intelligence. (Source: Bloomberg)",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Operation Chargeback",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/operation-chargeback-video",
+      "pub_date": "Wed, 01 Apr 2026 07:00:03 GMT",
+      "categories": [],
+      "description": "Mutmaßlicher Kreditkartenbetrug in Millionenhöhe. Deutschland hat im Ermittlungsverfahren “Operational Chargeback” weltweit Beschuldigte im Visier. (Source: Bloomberg)",
+      "content": "Mutmaßlicher Kreditkartenbetrug in Millionenhöhe. Deutschland hat im Ermittlungsverfahren “Operational Chargeback” weltweit Beschuldigte im Visier. (Source: Bloomberg)",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "OpenAI Valued at $852 Billion After Completing $122 Billion Round",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/openai-valued-at-852-billion-after-completing-122-billion-round",
+      "pub_date": "Tue, 31 Mar 2026 20:05:00 GMT",
+      "categories": [],
+      "description": "OpenAI has completed a deal to raise $122 billion from investors at an $852 billion valuation, marking the company’s largest funding round to date by far and bolstering its costly push for more chips, data centers and talent.",
+      "content": "OpenAI has completed a deal to raise $122 billion from investors at an $852 billion valuation, marking the company’s largest funding round to date by far and bolstering its costly push for more chips, data centers and talent.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Singapore Gets Robotaxis as Grab, WeRide Launch Driverless Cars",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/singapore-gets-robotaxis-as-grab-weride-launch-driverless-cars",
+      "pub_date": "Wed, 01 Apr 2026 03:00:00 GMT",
+      "categories": [
+        "NAS:WRD"
+      ],
+      "description": "Singapore’s Grab Holdings Ltd. became Southeast Asia’s first ride provider to start a driverless service, betting the technology can help cut costs and prove out robotaxis in dense urban traffic.",
+      "content": "Singapore’s Grab Holdings Ltd. became Southeast Asia’s first ride provider to start a driverless service, betting the technology can help cut costs and prove out robotaxis in dense urban traffic.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Perplexity AI Machine Accused of Sharing Data With Meta, Google",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/perplexity-ai-machine-accused-of-sharing-data-with-meta-google",
+      "pub_date": "Wed, 01 Apr 2026 02:10:34 GMT",
+      "categories": [
+        "NMS:META",
+        "NMS:GOOGL"
+      ],
+      "description": "Perplexity AI Inc. was accused in a lawsuit of surreptitiously sharing the personal information of its users with Meta Platforms Inc. and Alphabet Inc.’s Google in violation of California privacy laws.",
+      "content": "Perplexity AI Inc. was accused in a lawsuit of surreptitiously sharing the personal information of its users with Meta Platforms Inc. and Alphabet Inc.’s Google in violation of California privacy laws.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "China’s New AI Stocks Drive Volatility in Asia as Hype Grows",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/china-s-new-ai-stocks-drive-volatility-in-asia-as-hype-grows",
+      "pub_date": "Wed, 01 Apr 2026 00:24:07 GMT",
+      "categories": [],
+      "description": "Chinese artificial‑intelligence firms have emerged as one of the most volatile pockets of Asia’s equity markets, with shares of newly listed model developers and chip designers swinging on retail flows.",
+      "content": "Chinese artificial‑intelligence firms have emerged as one of the most volatile pockets of Asia’s equity markets, with shares of newly listed model developers and chip designers swinging on retail flows.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Energy Shock Clouds $800 Billion of Asian Data Center Financing",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/energy-shock-spurs-caution-as-asia-bankers-fund-data-center-boom",
+      "pub_date": "Tue, 31 Mar 2026 23:00:00 GMT",
+      "categories": [],
+      "description": "The energy shock sparked by the Iran war is increasingly coming up in conversations about data center deals for Asian bankers, who have helped finance billions of dollars of artificial intelligence infrastructure across the region.",
+      "content": "The energy shock sparked by the Iran war is increasingly coming up in conversations about data center deals for Asian bankers, who have helped finance billions of dollars of artificial intelligence infrastructure across the region.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Former Baidu President on AI Tokenization in China",
+      "link": "https://www.bloomberg.com/news/videos/2026-04-01/former-baidu-president-on-ai-tokenization-in-china-video",
+      "pub_date": "Wed, 01 Apr 2026 01:02:39 GMT",
+      "categories": [
+        "NMS:BIDU"
+      ],
+      "description": "The former President of Baidu says AI tokenization is exploding in China, far beyond what OpenClaw illustrated earlier this year. Zhang Yaqin, who runs China's Institute of AI Industry Research at Beijing's Tsinghua University speaks to Bloomberg's Chief North Asia Correspondent Stephen Engle in Beijing. (Source: Bloomberg)",
+      "content": "The former President of Baidu says AI tokenization is exploding in China, far beyond what OpenClaw illustrated earlier this year. Zhang Yaqin, who runs China's Institute of AI Industry Research at Beijing's Tsinghua University speaks to Bloomberg's Chief North Asia Correspondent Stephen Engle in Beijing. (Source: Bloomberg)",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Fund Beating 99% of Peers Bets Big on Taiwan’s Smaller AI Stocks",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/fund-beating-99-of-peers-bets-big-on-taiwan-s-smaller-ai-stocks",
+      "pub_date": "Wed, 01 Apr 2026 00:59:38 GMT",
+      "categories": [],
+      "description": "A fund focusing on smaller Taiwanese firms in the AI supply chain has emerged as a big winner, with a diversified strategy helping it weather the volatility that has rattled the industry over the past year.",
+      "content": "A fund focusing on smaller Taiwanese firms in the AI supply chain has emerged as a big winner, with a diversified strategy helping it weather the volatility that has rattled the industry over the past year.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Chinese Share Buybacks Surge as Iran War Jolts Global Markets",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/chinese-share-buybacks-surge-as-iran-war-jolts-global-markets",
+      "pub_date": "Wed, 01 Apr 2026 00:27:27 GMT",
+      "categories": [],
+      "description": "China’s listed companies announced the most share buybacks in almost a year last month as the escalating war in Iran drove down stock prices.",
+      "content": "China’s listed companies announced the most share buybacks in almost a year last month as the escalating war in Iran drove down stock prices.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Google Readies Screenless Fitbit Band to Rival Growing Whoop Craze",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/google-readies-revamped-screenless-fitbit-to-rival-growing-whoop-craze",
+      "pub_date": "Wed, 01 Apr 2026 00:02:05 GMT",
+      "categories": [
+        "NMS:GOOGL"
+      ],
+      "description": "Alphabet Inc.’s Google is developing its own fitness band, aiming to compete with screenless wearable devices from upstarts like Whoop Inc. and Oura Health Oy.",
+      "content": "Alphabet Inc.’s Google is developing its own fitness band, aiming to compete with screenless wearable devices from upstarts like Whoop Inc. and Oura Health Oy.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Palmer Luckey-Backed Nuclear Startup Valar Lands $2 Billion Valuation",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/palmer-luckey-backed-nuclear-startup-valar-lands-2-billion-valuation",
+      "pub_date": "Tue, 31 Mar 2026 23:57:02 GMT",
+      "categories": [],
+      "description": "Valar Atomics, the nuclear energy startup backed by Anduril Industries Inc. founder Palmer Luckey and Palantir Technologies Inc. executive Shyam Sankar, has raised fresh capital at a valuation of $2 billion, according to people familiar with the matter.",
+      "content": "Valar Atomics, the nuclear energy startup backed by Anduril Industries Inc. founder Palmer Luckey and Palantir Technologies Inc. executive Shyam Sankar, has raised fresh capital at a valuation of $2 billion, according to people familiar with the matter.",
+      "source_name": "Bloomberg Tech",
+      "source_category": "科技",
+      "source_priority": "high"
+    },
+    {
+      "title": "Bitcoin Holds Modest Gains After Five-Month Losing Streak Ends",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/bitcoin-holds-gains-in-asia-after-five-month-losing-streak-ends",
+      "pub_date": "Wed, 01 Apr 2026 01:34:44 GMT",
+      "categories": [],
+      "description": "Bitcoin was holding onto slim gains on Wednesday after snapping a five-month losing streak in March, buoyed along with other risk assets by US President Donald Trump’s intention to end the war on Iran within weeks.",
+      "content": "Bitcoin was holding onto slim gains on Wednesday after snapping a five-month losing streak in March, buoyed along with other risk assets by US President Donald Trump’s intention to end the war on Iran within weeks.",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "Zodia Markets CEO Ahmad Departs StanChart-Backed Crypto Firm",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/zodia-markets-ceo-ahmad-departs-stanchart-backed-crypto-firm",
+      "pub_date": "Wed, 01 Apr 2026 09:13:59 GMT",
+      "categories": [
+        "LSE:STAN"
+      ],
+      "description": "The chief executive officer of Standard Chartered Plc’s crypto trading subsidiary Zodia Markets Holdings Ltd. has left the firm, people with knowledge of the matter said.",
+      "content": "The chief executive officer of Standard Chartered Plc’s crypto trading subsidiary Zodia Markets Holdings Ltd. has left the firm, people with knowledge of the matter said.",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "‘Blockchain Island’ Faces Off Against EU Over Crypto Regulation",
+      "link": "https://www.bloomberg.com/news/articles/2026-04-01/malta-fights-back-against-eu-s-crypto-regulation-plans",
+      "pub_date": "Wed, 01 Apr 2026 04:00:07 GMT",
+      "categories": [],
+      "description": "Europe’s financial supervision battles are usually fought diplomatically. A tersely worded statement here, a veiled signal there. But on the tiny island of Malta &mdash; home to golden visas, legalized cannabis and a massive gambling industry &mdash; the rules of engagement are different.",
+      "content": "Europe’s financial supervision battles are usually fought diplomatically. A tersely worded statement here, a veiled signal there. But on the tiny island of Malta &mdash; home to golden visas, legalized cannabis and a massive gambling industry &mdash; the rules of engagement are different.",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "Crypto’s Weekend Trading Platforms Are Proving to Be Prescient",
+      "link": "https://www.bloomberg.com/news/newsletters/2026-03-31/crypto-s-weekend-trading-venues-are-proving-to-be-prescient",
+      "pub_date": "Tue, 31 Mar 2026 21:00:01 GMT",
+      "categories": [],
+      "description": "Open window into pricing conflict",
+      "content": "Open window into pricing conflict",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "Block’s Dorsey Outlines AI-Powered Vision to Cut Middle Managers",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/block-s-dorsey-outlines-ai-powered-vision-to-cut-middle-managers",
+      "pub_date": "Tue, 31 Mar 2026 19:05:43 GMT",
+      "categories": [
+        "NYS:XYZ"
+      ],
+      "description": "Jack Dorsey is pitching artificial intelligence as a replacement for middle managers in his reimagined view of how technology companies should function, weeks after Block Inc. announced it was cutting nearly half its staff.",
+      "content": "Jack Dorsey is pitching artificial intelligence as a replacement for middle managers in his reimagined view of how technology companies should function, weeks after Block Inc. announced it was cutting nearly half its staff.",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "Bitcoin-Backed Municipal Bond Clears Hurdle With Moody’s Rating",
+      "link": "https://www.bloomberg.com/news/articles/2026-03-31/bitcoin-backed-municipal-bond-clears-hurdle-with-moody-s-rating",
+      "pub_date": "Tue, 31 Mar 2026 18:58:04 GMT",
+      "categories": [
+        "NYS:MCO"
+      ],
+      "description": "The riskiest asset class is converging with one of the safest in a first-of-its-kind financial product: A Bitcoin-backed municipal bond.",
+      "content": "The riskiest asset class is converging with one of the safest in a first-of-its-kind financial product: A Bitcoin-backed municipal bond.",
+      "source_name": "Bloomberg Crypto",
+      "source_category": "Crypto",
+      "source_priority": "high"
+    },
+    {
+      "title": "Are Algae Securities Fraud?",
+      "link": "https://www.bloomberg.com/opinion/newsletters/2026-03-31/are-algae-securities-fraud",
+      "pub_date": "Tue, 31 Mar 2026 18:02:25 GMT",
+      "categories": [
+        "world"
+      ],
+      "description": "Carbon onsets, mini-millionaire hedge funds and float-adjusted indexes.",
+      "content": "Carbon onsets, mini-millionaire hedge funds and float-adjusted indexes.",
+      "source_name": "Bloomberg Opinion",
+      "source_category": "深度洞察",
+      "source_priority": "high"
+    },
+    {
+      "title": "Private sector hiring totaled 62,000 in March, better than expected, ADP says",
+      "link": "https://www.cnbc.com/2026/04/01/private-sector-hiring-totaled-62000-in-march-better-than-expected-adp-says.html",
+      "pub_date": "Wed, 01 Apr 2026 12:33:48 GMT",
+      "categories": [],
+      "description": "Private sector employment growth kept pace, but health care and construction continued to provide nearly all the momentum.",
+      "content": "Private sector employment growth kept pace, but health care and construction continued to provide nearly all the momentum.",
+      "source_name": "CNBC Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Why $4 a gallon gas prices won’t trigger Fed interest rate hikes — and could lead to cuts",
+      "link": "https://www.cnbc.com/2026/03/31/why-4-a-gallon-gas-prices-wont-trigger-fed-interest-rate-hikes-and-could-lead-to-cuts.html",
+      "pub_date": "Tue, 31 Mar 2026 18:35:23 GMT",
+      "categories": [],
+      "description": "While there's still plenty of uncertainty about where rates are headed, Wall Street commentary shifted back to expectations for cuts.",
+      "content": "While there's still plenty of uncertainty about where rates are headed, Wall Street commentary shifted back to expectations for cuts.",
+      "source_name": "CNBC Markets",
+      "source_category": "美股",
+      "source_priority": "high"
+    },
+    {
+      "title": "Visa launches new AI tools to manage the charge dispute process",
+      "link": "https://www.cnbc.com/2026/04/01/visa-ai-tools-dispute-management.html",
+      "pub_date": "Wed, 01 Apr 2026 12:00:01 GMT",
+      "categories": [],
+      "description": "Visa's new tools are part of a larger push by major banks and financial institutions to incorporate AI into their businesses.",
+      "content": "Visa's new tools are part of a larger push by major banks and financial institutions to incorporate AI into their businesses.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Stocks making the biggest moves premarket: Nike, RH, Sandisk & more",
+      "link": "https://www.cnbc.com/2026/04/01/stocks-making-the-biggest-moves-premarket-nike-rh-sandisk-more.html",
+      "pub_date": "Wed, 01 Apr 2026 11:47:06 GMT",
+      "categories": [],
+      "description": "These are the stocks posting the largest moves premarket.",
+      "content": "These are the stocks posting the largest moves premarket.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Stocks making the biggest moves after hours: Nike, Dave & Buster's, RH and more",
+      "link": "https://www.cnbc.com/2026/03/31/stocks-making-the-biggest-moves-after-hours-nke-play-rh.html",
+      "pub_date": "Tue, 31 Mar 2026 21:11:17 GMT",
+      "categories": [],
+      "description": "See which stocks are posting big moves after the bell.",
+      "content": "See which stocks are posting big moves after the bell.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Warren Buffett says Iran bomb would make nuclear disaster harder to avoid",
+      "link": "https://www.cnbc.com/2026/03/31/warren-buffett-says-iran-bomb-would-make-nuclear-disaster-harder-to-avoid.html",
+      "pub_date": "Tue, 31 Mar 2026 17:16:22 GMT",
+      "categories": [],
+      "description": "The Berkshire Hathaway chairman said the growing number of nuclear-armed states has fundamentally altered the global risk landscape.",
+      "content": "The Berkshire Hathaway chairman said the growing number of nuclear-armed states has fundamentally altered the global risk landscape.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "While low-income consumers struggle with rising gas prices, higher earners grow nervous as markets fall",
+      "link": "https://www.cnbc.com/2026/03/31/gas-prices-hit-low-income-consumers-falling-markets-hurt-high-earners.html",
+      "pub_date": "Tue, 31 Mar 2026 20:05:29 GMT",
+      "categories": [],
+      "description": "Bank of America data reveals lower-income consumers are already pulling back on spending. Consumer sentiment shows higher earners are feeling less confident.",
+      "content": "Bank of America data reveals lower-income consumers are already pulling back on spending. Consumer sentiment shows higher earners are feeling less confident.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Warren Buffett says he sold Apple too soon and would buy more of it, though not in this market",
+      "link": "https://www.cnbc.com/2026/03/31/warren-buffett-says-he-sold-apple-too-soon-and-would-buy-more-of-it-though-not-in-this-market-.html",
+      "pub_date": "Tue, 31 Mar 2026 15:31:12 GMT",
+      "categories": [],
+      "description": "Apple remains Berkshire Hathaway's largest holding even after the conglomerate trimmed its stake at the end of last year.",
+      "content": "Apple remains Berkshire Hathaway's largest holding even after the conglomerate trimmed its stake at the end of last year.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Warren Buffett says he's still making calls on investments at Berkshire, flags 'tiny' new buy",
+      "link": "https://www.cnbc.com/2026/03/31/warren-buffett-says-hes-still-making-calls-on-investments-at-berkshire-flags-tiny-new-buy.html",
+      "pub_date": "Tue, 31 Mar 2026 15:02:49 GMT",
+      "categories": [],
+      "description": "The 95-year-old investor said he still comes into the office daily and stays engaged with markets.",
+      "content": "The 95-year-old investor said he still comes into the office daily and stays engaged with markets.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Warren Buffett teams up with NBA superstar Stephen Curry for charity lunch, reviving iconic auction",
+      "link": "https://www.cnbc.com/2026/03/31/warren-buffett-teams-up-with-stephen-curry-for-charity-lunch.html",
+      "pub_date": "Tue, 31 Mar 2026 16:37:47 GMT",
+      "categories": [],
+      "description": "The winning bidder — along with up to seven guests — will join Buffett and the Currys for an exclusive lunch in Omaha, Nebraska.",
+      "content": "The winning bidder — along with up to seven guests — will join Buffett and the Currys for an exclusive lunch in Omaha, Nebraska.",
+      "source_name": "CNBC Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Why Is Gold Crashing During War? 3 Reasons I'm Buying The Selloff",
+      "link": "https://seekingalpha.com/article/4887494-why-is-gold-crashing-during-war-3-reasons-im-buying-the-selloff?source=feed_tag_editors_picks",
+      "pub_date": "Tue, 31 Mar 2026 12:48:43 -0400",
+      "categories": [
+        "GLD",
+        "IAU",
+        "GLDM",
+        "SGOL",
+        "BAR",
+        "IAUM",
+        "OUNZ",
+        "AAAU",
+        "XAUUSD:CUR",
+        "Agar Capital"
+      ],
+      "description": "",
+      "content": "",
+      "source_name": "Seeking Alpha Editors' Picks",
+      "source_category": "深度洞察",
+      "source_priority": "high"
+    },
+    {
+      "title": "McCormick Q1 Review: The Merger Deal Is Not What Shareholders Seemed To Want",
+      "link": "https://seekingalpha.com/article/4887442-mccormick-q1-review-the-merger-deal-is-not-what-shareholders-seemed-to-want?source=feed_tag_editors_picks",
+      "pub_date": "Tue, 31 Mar 2026 10:53:41 -0400",
+      "categories": [
+        "UL",
+        "MKC",
+        "Gytis Zizys"
+      ],
+      "description": "",
+      "content": "",
+      "source_name": "Seeking Alpha Editors' Picks",
+      "source_category": "深度洞察",
+      "source_priority": "high"
+    },
+    {
+      "title": "US investors prefer Europemaxxing to Europebashing",
+      "link": "https://www.ft.com/content/2d691615-9aa4-4085-8191-9c5c5f558192",
+      "pub_date": "Wed, 01 Apr 2026 11:42:20 GMT",
+      "categories": [],
+      "description": "Venture capital firms know their dollars go a lot further here than in Silicon Valley",
+      "content": "Venture capital firms know their dollars go a lot further here than in Silicon Valley",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The growing crackdown on corporate child exploitation",
+      "link": "https://www.ft.com/content/413053e0-4d8c-4fa1-bb04-e98ca7bfcae7",
+      "pub_date": "Wed, 01 Apr 2026 11:01:07 GMT",
+      "categories": [],
+      "description": "A golden age for lucrative kids’ marketing is coming to an overdue end",
+      "content": "A golden age for lucrative kids’ marketing is coming to an overdue end",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "A spokesperson could not be reached for comment (possibly because she doesn’t exist)",
+      "link": "https://www.ft.com/content/05c9515a-d183-4e9f-aab9-8b3c6899ff25",
+      "pub_date": "Wed, 01 Apr 2026 09:19:21 GMT",
+      "categories": [],
+      "description": "The curious case of Emilia Carrière, alleged comms professional",
+      "content": "The curious case of Emilia Carrière, alleged comms professional",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The great unwinding of Unilever",
+      "link": "https://www.ft.com/content/ea185d2f-73e5-4d6f-82f6-fcd28db9b463",
+      "pub_date": "Wed, 01 Apr 2026 04:00:28 GMT",
+      "categories": [],
+      "description": "The FTSE 100 group is combining its food business with McCormick to create a $66bn food giant",
+      "content": "The FTSE 100 group is combining its food business with McCormick to create a $66bn food giant",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The hidden history behind Apple’s manufacturing power",
+      "link": "https://www.ft.com/content/080062ff-e555-4e88-860c-a693b2148259",
+      "pub_date": "Wed, 01 Apr 2026 04:00:06 GMT",
+      "categories": [],
+      "description": "How a little-known yet highly influential management course in postwar Japan paved the way for Steve Jobs’ obsession with quality",
+      "content": "How a little-known yet highly influential management course in postwar Japan paved the way for Steve Jobs’ obsession with quality",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Inside the German state trying to break free from Microsoft",
+      "link": "https://www.ft.com/content/95bd87c8-a112-49a5-9b80-c280a6bb4283",
+      "pub_date": "Wed, 01 Apr 2026 04:00:06 GMT",
+      "categories": [],
+      "description": "Schleswig-Holstein’s radical tech overhaul offers Europe a live experiment in ending dependence on US Big Tech",
+      "content": "Schleswig-Holstein’s radical tech overhaul offers Europe a live experiment in ending dependence on US Big Tech",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "OpenAI raises $3bn from retail investors as part of record funding haul",
+      "link": "https://www.ft.com/content/89dd9814-e0f3-4464-9a06-58686e85c76e",
+      "pub_date": "Tue, 31 Mar 2026 20:09:47 GMT",
+      "categories": [],
+      "description": "ChatGPT maker taps individuals for first time as it pulls in up to $122bn",
+      "content": "ChatGPT maker taps individuals for first time as it pulls in up to $122bn",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Is this social media's tobacco moment?",
+      "link": "https://www.ft.com/content/5a7324b8-d553-46b2-8c6d-26c2a73a43dd",
+      "pub_date": "Tue, 31 Mar 2026 20:00:00 GMT",
+      "categories": [],
+      "description": "The judgment against Meta and Google",
+      "content": "The judgment against Meta and Google",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Raspberry Pi profit surges as AI boom lifts demand",
+      "link": "https://www.ft.com/content/5c167591-80bb-4290-ae66-7d04112cbd1c",
+      "pub_date": "Tue, 31 Mar 2026 16:31:34 GMT",
+      "categories": [],
+      "description": "Sales growth for UK computer company particularly strong in China and US",
+      "content": "Sales growth for UK computer company particularly strong in China and US",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Huawei comeback loses pace as cloud and phones falter",
+      "link": "https://www.ft.com/content/af7e4c2e-cf9b-41d2-8c0c-935126c3ac7e",
+      "pub_date": "Tue, 31 Mar 2026 15:43:02 GMT",
+      "categories": [],
+      "description": "Chinese tech conglomerate reports slowest revenue growth in three years",
+      "content": "Chinese tech conglomerate reports slowest revenue growth in three years",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Nvidia invests $2bn in chipmaker Marvell to boost AI networking",
+      "link": "https://www.ft.com/content/e23bc33e-757e-46bc-acad-e89647351324",
+      "pub_date": "Tue, 31 Mar 2026 15:42:44 GMT",
+      "categories": [],
+      "description": "Semiconductor groups join forces on silicon photonics to speed up data centre systems",
+      "content": "Semiconductor groups join forces on silicon photonics to speed up data centre systems",
+      "source_name": "FT Tech",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Earnings forecasts up, stocks . . .  down",
+      "link": "https://www.ft.com/content/f2694c02-1f02-4bae-9d89-f1591f75e2db",
+      "pub_date": "Wed, 01 Apr 2026 11:02:54 GMT",
+      "categories": [],
+      "description": "Snoozefest or losefest?",
+      "content": "Snoozefest or losefest?",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The growing crackdown on corporate child exploitation",
+      "link": "https://www.ft.com/content/413053e0-4d8c-4fa1-bb04-e98ca7bfcae7",
+      "pub_date": "Wed, 01 Apr 2026 11:01:07 GMT",
+      "categories": [],
+      "description": "A golden age for lucrative kids’ marketing is coming to an overdue end",
+      "content": "A golden age for lucrative kids’ marketing is coming to an overdue end",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Our euro, your solution",
+      "link": "https://www.ft.com/content/84afc98d-f1d6-4b62-846a-3271cd2a2224",
+      "pub_date": "Wed, 01 Apr 2026 10:17:20 GMT",
+      "categories": [],
+      "description": "Reducing the world’s dependency on the dollar is in the interest of every country that buys energy, issues debt or trades",
+      "content": "Reducing the world’s dependency on the dollar is in the interest of every country that buys energy, issues debt or trades",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Airlines in crisis mode as Iran war hits jet fuel supplies",
+      "link": "https://www.ft.com/content/c7bb398b-1362-41f2-b09c-91a8e881c3d5",
+      "pub_date": "Wed, 01 Apr 2026 07:59:38 GMT",
+      "categories": [],
+      "description": "Carriers scale back expansion plans as oil prices soar",
+      "content": "Carriers scale back expansion plans as oil prices soar",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Stocks rally on hopes Iran war will end soon",
+      "link": "https://www.ft.com/content/bd91441f-28fc-4c35-8ff1-10ec6141148c",
+      "pub_date": "Wed, 01 Apr 2026 07:11:25 GMT",
+      "categories": [],
+      "description": "Burst of investor optimism after Donald Trump says US to end conflict in Iran within ‘2 to 3 weeks’",
+      "content": "Burst of investor optimism after Donald Trump says US to end conflict in Iran within ‘2 to 3 weeks’",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "BP should be ‘simpler, stronger and more valuable’, new CEO tells staff",
+      "link": "https://www.ft.com/content/5510fc9b-e336-4c69-a428-4a843acc1839",
+      "pub_date": "Wed, 01 Apr 2026 07:04:13 GMT",
+      "categories": [],
+      "description": "Meg O’Neill’s first message to employees pledges improved performance in difficult geopolitical environment",
+      "content": "Meg O’Neill’s first message to employees pledges improved performance in difficult geopolitical environment",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The disappointing dollar",
+      "link": "https://www.ft.com/content/a18ddb6a-1887-484e-ab9f-ed706d0d4a5c",
+      "pub_date": "Wed, 01 Apr 2026 05:30:04 GMT",
+      "categories": [],
+      "description": "And the worst-case scenario for oil",
+      "content": "And the worst-case scenario for oil",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Strategy is entering its desperate stretch",
+      "link": "https://www.ft.com/content/f301e770-8c45-481f-80d3-0c95ef0892c2",
+      "pub_date": "Wed, 01 Apr 2026 05:00:05 GMT",
+      "categories": [],
+      "description": "Remember when regulators were a thing?",
+      "content": "Remember when regulators were a thing?",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The great unwinding of Unilever",
+      "link": "https://www.ft.com/content/ea185d2f-73e5-4d6f-82f6-fcd28db9b463",
+      "pub_date": "Wed, 01 Apr 2026 04:00:28 GMT",
+      "categories": [],
+      "description": "The FTSE 100 group is combining its food business with McCormick to create a $66bn food giant",
+      "content": "The FTSE 100 group is combining its food business with McCormick to create a $66bn food giant",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "High street banks could learn from Revolut’s fee bonanza",
+      "link": "https://www.ft.com/content/7722ca5a-a6d8-481d-b9d0-7ee1429ee535",
+      "pub_date": "Wed, 01 Apr 2026 04:00:27 GMT",
+      "categories": [],
+      "description": "Higher account fees would reduce exposure to interest rates for old-school lenders",
+      "content": "Higher account fees would reduce exposure to interest rates for old-school lenders",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "California faces sky-high petrol prices",
+      "link": "https://www.ft.com/content/01b4ae28-0f13-4a32-90ef-afc4dc095cfc",
+      "pub_date": "Wed, 01 Apr 2026 04:00:27 GMT",
+      "categories": [],
+      "description": "Most populous US state is confronting tight supplies of petrol and jet fuel from Asia",
+      "content": "Most populous US state is confronting tight supplies of petrol and jet fuel from Asia",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "‘Desperate’ Asia turns to Russian oil",
+      "link": "https://www.ft.com/content/c6d988ed-de4f-49d9-97c9-bfebc51be3e2",
+      "pub_date": "Wed, 01 Apr 2026 04:00:27 GMT",
+      "categories": [],
+      "description": "Import-dependent countries take advantage of US sanctions waiver to replace disrupted Gulf supply",
+      "content": "Import-dependent countries take advantage of US sanctions waiver to replace disrupted Gulf supply",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Lessons from your petrol pump",
+      "link": "https://www.ft.com/content/a57159d7-6204-411c-b0af-1bb1dc3e6d4b",
+      "pub_date": "Wed, 01 Apr 2026 04:00:15 GMT",
+      "categories": [],
+      "description": "As consumers, sharp price increases are unwanted. But they send an essential signal",
+      "content": "As consumers, sharp price increases are unwanted. But they send an essential signal",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Reasons to be bullish on gold",
+      "link": "https://www.ft.com/content/daf29b16-5f97-42af-b7c0-8e9ca78c8e95",
+      "pub_date": "Wed, 01 Apr 2026 04:00:15 GMT",
+      "categories": [],
+      "description": "The precious metal has suffered a sell-off during the Middle East war but the outlook is more positive",
+      "content": "The precious metal has suffered a sell-off during the Middle East war but the outlook is more positive",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Oaktree’s path puts private credit choices into relief",
+      "link": "https://www.ft.com/content/165a1111-4bd2-4a5f-83e2-46f931ffb592",
+      "pub_date": "Wed, 01 Apr 2026 04:00:15 GMT",
+      "categories": [],
+      "description": "Market stress to test whether it is right not to pursue scale as aggressively and broadly as some peers",
+      "content": "Market stress to test whether it is right not to pursue scale as aggressively and broadly as some peers",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Record number of megadeals agreed in first quarter",
+      "link": "https://www.ft.com/content/4c004e97-e582-4f47-89ea-83c126d0df9d",
+      "pub_date": "Wed, 01 Apr 2026 04:00:14 GMT",
+      "categories": [],
+      "description": "Twenty-two transactions each valued above $10bn announced in past three months",
+      "content": "Twenty-two transactions each valued above $10bn announced in past three months",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Chinese government bonds emerge as lone war haven",
+      "link": "https://www.ft.com/content/72215587-4b6c-454c-85ff-6956132705d9",
+      "pub_date": "Wed, 01 Apr 2026 02:25:34 GMT",
+      "categories": [],
+      "description": "Yields on China’s debt are down marginally since the start of the conflict while those of other major economies have risen",
+      "content": "Yields on China’s debt are down marginally since the start of the conflict while those of other major economies have risen",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Trump says US could withdraw from Iran ‘whether we have a deal or not’",
+      "link": "https://www.ft.com/content/77e5184d-9854-4a30-b53c-498223b436a5",
+      "pub_date": "Wed, 01 Apr 2026 02:25:26 GMT",
+      "categories": [],
+      "description": "US president signals growing impatience with a war that has sent energy prices spiralling",
+      "content": "US president signals growing impatience with a war that has sent energy prices spiralling",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Middle East war as it happened day 32: US stocks post best day in 10 months as Donald Trump says ‘hard part is done’ in Iran",
+      "link": "https://www.ft.com/content/b2c83041-9291-41ac-9377-257d8b1b53ad",
+      "pub_date": "Tue, 31 Mar 2026 22:09:41 GMT",
+      "categories": [],
+      "description": "US president says he is prepared to withdraw from conflict ‘whether we have a deal or not’",
+      "content": "US president says he is prepared to withdraw from conflict ‘whether we have a deal or not’",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Iran war gives Chinese exporters chance to grab global market share",
+      "link": "https://www.ft.com/content/5c353173-5c60-4ec0-8920-409caf77c4d7",
+      "pub_date": "Tue, 31 Mar 2026 21:00:09 GMT",
+      "categories": [],
+      "description": "Ample oil reserves and renewables growth make manufacturing sector more resilient than rivals",
+      "content": "Ample oil reserves and renewables growth make manufacturing sector more resilient than rivals",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Oil soars 60% in March as Middle East crisis chokes energy supplies",
+      "link": "https://www.ft.com/content/5a5b3220-d260-4355-baa5-1986ac1523fb",
+      "pub_date": "Tue, 31 Mar 2026 20:09:49 GMT",
+      "categories": [],
+      "description": "Tehran’s closure of Strait of Hormuz in response to US-Israeli strikes sparks biggest crude rally in decades",
+      "content": "Tehran’s closure of Strait of Hormuz in response to US-Israeli strikes sparks biggest crude rally in decades",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "OpenAI raises $3bn from retail investors as part of record funding haul",
+      "link": "https://www.ft.com/content/89dd9814-e0f3-4464-9a06-58686e85c76e",
+      "pub_date": "Tue, 31 Mar 2026 20:09:47 GMT",
+      "categories": [],
+      "description": "ChatGPT maker taps individuals for first time as it pulls in up to $122bn",
+      "content": "ChatGPT maker taps individuals for first time as it pulls in up to $122bn",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "US audit regulator pledges to rewrite oversight rule after industry backlash",
+      "link": "https://www.ft.com/content/bea2e7c6-6106-4d4e-a8e6-27ec2420b152",
+      "pub_date": "Tue, 31 Mar 2026 19:28:13 GMT",
+      "categories": [],
+      "description": "Jim Logothetis says parts of quality control standard implemented by Biden administration ‘may be unnecessary’",
+      "content": "Jim Logothetis says parts of quality control standard implemented by Biden administration ‘may be unnecessary’",
+      "source_name": "FT Markets",
+      "source_category": "美股",
+      "source_priority": "medium"
+    },
+    {
+      "title": "“Liberation Day” has reshaped trade—but not as Donald Trump hoped",
+      "link": "https://www.economist.com/finance-and-economics/2026/04/01/liberation-day-has-reshaped-trade-but-not-as-donald-trump-hoped",
+      "pub_date": "Wed, 01 Apr 2026 11:00:11 +0000",
+      "categories": [],
+      "description": "In many ways, global commerce has strengthened",
+      "content": "In many ways, global commerce has strengthened",
+      "source_name": "The Economist Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Can a country get too rich?",
+      "link": "https://www.economist.com/finance-and-economics/2026/04/01/can-a-country-get-too-rich",
+      "pub_date": "Wed, 01 Apr 2026 10:59:08 +0000",
+      "categories": [],
+      "description": "Norway shows the potential pitfalls of uncommon prosperity",
+      "content": "Norway shows the potential pitfalls of uncommon prosperity",
+      "source_name": "The Economist Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "The energy shock brings coal back into fashion",
+      "link": "https://www.economist.com/finance-and-economics/2026/03/31/the-energy-shock-brings-coal-back-into-fashion",
+      "pub_date": "Tue, 31 Mar 2026 17:27:53 +0000",
+      "categories": [],
+      "description": "An LNG crunch is good news for the world’s dirtiest fuel",
+      "content": "An LNG crunch is good news for the world’s dirtiest fuel",
+      "source_name": "The Economist Finance",
+      "source_category": "宏观",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Nothing’s AI devices plan reportedly contains smart glasses and earbuds",
+      "link": "https://techcrunch.com/2026/04/01/nothings-ai-devices-plan-reportedly-contains-smart-glasses-and-earbuds/",
+      "pub_date": "Wed, 01 Apr 2026 12:33:24 +0000",
+      "categories": [
+        "Gadgets",
+        "Hardware",
+        "AI hardware",
+        "nothing",
+        "smartglasses",
+        "wearables"
+      ],
+      "description": "The glasses will reportedly feature cameras, microphones and speakers, and will connect to a smartphone and the cloud to process AI queries.",
+      "content": "The glasses will reportedly feature cameras, microphones and speakers, and will connect to a smartphone and the cloud to process AI queries.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Mercor says it was hit by cyberattack tied to compromise of open-source LiteLLM project",
+      "link": "https://techcrunch.com/2026/03/31/mercor-says-it-was-hit-by-cyberattack-tied-to-compromise-of-open-source-litellm-project/",
+      "pub_date": "Wed, 01 Apr 2026 01:42:59 +0000",
+      "categories": [
+        "Startups",
+        "Security",
+        "AI",
+        "Lapsus$",
+        "Mercor",
+        "LiteLLM"
+      ],
+      "description": "The AI recruiting startup confirmed a security incident after an extortion hacking crew took credit for stealing data from the company's systems.",
+      "content": "The AI recruiting startup confirmed a security incident after an extortion hacking crew took credit for stealing data from the company's systems.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Toyota’s Woven Capital appoints new CIO and COO in push for finding the ‘future of mobility’",
+      "link": "https://techcrunch.com/2026/03/31/toyotas-woven-capital-appoints-new-cio-and-coo-in-push-for-finding-the-future-of-mobility/",
+      "pub_date": "Wed, 01 Apr 2026 01:00:00 +0000",
+      "categories": [
+        "Startups",
+        "Transportation",
+        "Venture",
+        "mobility",
+        "CVC"
+      ],
+      "description": "Woven Capital is the growth-stage venture capital arm of Toyota, focused on backing founders building in space, cybersecurity, and autonomous driving.",
+      "content": "Woven Capital is the growth-stage venture capital arm of Toyota, focused on backing founders building in space, cybersecurity, and autonomous driving.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Anthropic is having a month",
+      "link": "https://techcrunch.com/2026/03/31/anthropic-is-having-a-month/",
+      "pub_date": "Tue, 31 Mar 2026 23:58:26 +0000",
+      "categories": [
+        "AI",
+        "Anthropic"
+      ],
+      "description": "A human really borks things at Anthropic for the second time this week.",
+      "content": "A human really borks things at Anthropic for the second time this week.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Salesforce announces an AI-heavy makeover for Slack, with 30 new features",
+      "link": "https://techcrunch.com/2026/03/31/salesforce-announces-an-ai-heavy-makeover-for-slack-with-30-new-features/",
+      "pub_date": "Tue, 31 Mar 2026 22:46:25 +0000",
+      "categories": [
+        "AI",
+        "Enterprise",
+        "TC",
+        "Salesforce",
+        "Marc Benioff",
+        "Slack",
+        "artificial intelligence",
+        "Slackbot"
+      ],
+      "description": "Slack just got a whole lot more useful.",
+      "content": "Slack just got a whole lot more useful.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Robotaxi companies refuse to say how often their AVs need remote help",
+      "link": "https://techcrunch.com/2026/03/31/robotaxi-companies-refuse-to-say-how-often-their-avs-need-remote-help/",
+      "pub_date": "Tue, 31 Mar 2026 21:35:51 +0000",
+      "categories": [
+        "Transportation",
+        "aurora",
+        "May Mobility",
+        "Motional",
+        "nuro",
+        "robotaxis",
+        "Waymo",
+        "zoox"
+      ],
+      "description": "Aurora, May Mobility, Motional, Nuro, Tesla, Waymo, and Zoox all refused to cough up a number during Senator Ed Markey's recent investigation.",
+      "content": "Aurora, May Mobility, Motional, Nuro, Tesla, Waymo, and Zoox all refused to cough up a number during Senator Ed Markey's recent investigation.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "OpenAI, not yet public, raises $3B from retail investors in monster $122B fund raise",
+      "link": "https://techcrunch.com/2026/03/31/openai-not-yet-public-raises-3b-from-retail-investors-in-monster-122b-fund-raise/",
+      "pub_date": "Tue, 31 Mar 2026 21:25:04 +0000",
+      "categories": [
+        "AI",
+        "Fundraising",
+        "Andreessen Horowitz",
+        "Softbank",
+        "OpenAI",
+        "openai fundraise"
+      ],
+      "description": "OpenAI's latest funding round, led by Amazon, Nvidia, and SoftBank, values the AI lab at $852 billion as it nears an IPO.",
+      "content": "OpenAI's latest funding round, led by Amazon, Nvidia, and SoftBank, values the AI lab at $852 billion as it nears an IPO.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "It’s not your imagination: AI seed startups are commanding higher valuations",
+      "link": "https://techcrunch.com/2026/03/31/its-not-your-imagination-ai-seed-startups-are-commanding-higher-valuations/",
+      "pub_date": "Tue, 31 Mar 2026 21:00:00 +0000",
+      "categories": [
+        "Startups",
+        "Venture",
+        "seed rounds",
+        "venture"
+      ],
+      "description": "Among the most recent Y Combinator cohort, many startups were commanding $40 million valuations. But with more money comes higher expectations.",
+      "content": "Among the most recent Y Combinator cohort, many startups were commanding $40 million valuations. But with more money comes higher expectations.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Yupp shuts down after raising $33M from a16z crypto’s Chris Dixon",
+      "link": "https://techcrunch.com/2026/03/31/yupp-ai-shuts-down-33m-a16z-crypto-chris-dixon/",
+      "pub_date": "Tue, 31 Mar 2026 20:01:07 +0000",
+      "categories": [
+        "AI",
+        "Startups",
+        "a16z crypto",
+        "Chris Dixon"
+      ],
+      "description": "Less than a year after launching, with checks from some of the biggest names in Silicon Valley, crowdsourced AI model feedback startup Yupp is closing its business, the company said Tuesday.",
+      "content": "Less than a year after launching, with checks from some of the biggest names in Silicon Valley, crowdsourced AI model feedback startup Yupp is closing its business, the company said Tuesday.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Meta was finally held accountable for harming teens. Now what?",
+      "link": "https://techcrunch.com/2026/03/31/meta-was-finally-held-accountable-for-harming-teens-now-what/",
+      "pub_date": "Tue, 31 Mar 2026 19:32:32 +0000",
+      "categories": [
+        "Government & Policy",
+        "Social",
+        "Instagram",
+        "Meta",
+        "teen safety",
+        "YouTube"
+      ],
+      "description": "Meta faces thousands more court cases while Congress has proposed numerous bills addressing children’s online safety, some heavily criticized.",
+      "content": "Meta faces thousands more court cases while Congress has proposed numerous bills addressing children’s online safety, some heavily criticized.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Go play this secret game in your TikTok DMs",
+      "link": "https://techcrunch.com/2026/03/31/go-play-this-secret-game-in-your-tiktok-dms/",
+      "pub_date": "Tue, 31 Mar 2026 18:47:47 +0000",
+      "categories": [
+        "Apps",
+        "Gaming",
+        "Social",
+        "TikTok"
+      ],
+      "description": "The game is available globally and can be accessed in both one-on-one DM chats and in group chats.",
+      "content": "The game is available globally and can be accessed in both one-on-one DM chats and in group chats.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Caller ID app Truecaller hits 500 million monthly users",
+      "link": "https://techcrunch.com/2026/03/31/caller-id-app-truecaller-hits-500-million-monthly-users/",
+      "pub_date": "Tue, 31 Mar 2026 18:40:59 +0000",
+      "categories": [
+        "Apps",
+        "Gadgets",
+        "caller id",
+        "India",
+        "Truecaller"
+      ],
+      "description": "Truecaller now has more than 4 million paying users across the world.",
+      "content": "Truecaller now has more than 4 million paying users across the world.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Social gaming platform Rec Room, once valued at $3.5B, is shutting down",
+      "link": "https://techcrunch.com/2026/03/31/social-gaming-platform-rec-room-once-valued-at-3-5b-is-shutting-down/",
+      "pub_date": "Tue, 31 Mar 2026 18:05:13 +0000",
+      "categories": [
+        "Gaming",
+        "Social",
+        "In Brief",
+        "Rec Room",
+        "VR"
+      ],
+      "description": "Rec Room, the social platform for user-generated games and virtual experiences, will shutter on June 1.",
+      "content": "Rec Room, the social platform for user-generated games and virtual experiences, will shutter on June 1.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Alexa+ gets new food ordering experiences with Uber Eats and Grubhub",
+      "link": "https://techcrunch.com/2026/03/31/alexa-plus-new-food-ordering-experiences-with-uber-eats-and-grubhub/",
+      "pub_date": "Tue, 31 Mar 2026 17:41:35 +0000",
+      "categories": [
+        "AI",
+        "Alexa",
+        "Amazon",
+        "food delivery",
+        "grubhub",
+        "Uber Eats"
+      ],
+      "description": "You can now order from Uber Eats and Grubhub using Alexa+, an experience Amazon says will be similar to chatting with a waiter at a restaurant or placing an order at a drive-thru.",
+      "content": "You can now order from Uber Eats and Grubhub using Alexa+, an experience Amazon says will be similar to chatting with a waiter at a restaurant or placing an order at a drive-thru.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Whoop’s valuation just tripled to $10 billion",
+      "link": "https://techcrunch.com/2026/03/31/whoop-valuation-10b-series-g-fundraise/",
+      "pub_date": "Tue, 31 Mar 2026 16:58:25 +0000",
+      "categories": [
+        "Fundraising",
+        "Hardware",
+        "Startups",
+        "fitness trackers",
+        "fundraising",
+        "Health",
+        "StrictlyVC",
+        "Valuations",
+        "venture",
+        "wearables",
+        "whoop"
+      ],
+      "description": "The fitness tracking startup just closed a $575 million Series G with Cristiano Ronaldo and LeBron James among its investors. The obvious question looming over a round of this size at this valuation: Is an IPO coming?",
+      "content": "The fitness tracking startup just closed a $575 million Series G with Cristiano Ronaldo and LeBron James among its investors. The obvious question looming over a round of this size at this valuation: Is an IPO coming?",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Uber and WeRide ramp up robotaxi operations in Dubai",
+      "link": "https://techcrunch.com/2026/03/31/uber-weride-dubai-robotaxi-partnership-equity/",
+      "pub_date": "Tue, 31 Mar 2026 16:26:26 +0000",
+      "categories": [
+        "Transportation",
+        "robotaxi",
+        "Uber",
+        "weride"
+      ],
+      "description": "Uber and WeRide have launched robotaxi operations without a human safety operator in Dubai as part of a broader expansion in the Middle East.",
+      "content": "Uber and WeRide have launched robotaxi operations without a human safety operator in Dubai as part of a broader expansion in the Middle East.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "North Korean hackers blamed for hijacking popular Axios open source project to spread malware",
+      "link": "https://techcrunch.com/2026/03/31/hacker-hijacks-axios-open-source-project-used-by-millions-to-push-malware/",
+      "pub_date": "Tue, 31 Mar 2026 16:01:11 +0000",
+      "categories": [
+        "Security",
+        "hackers",
+        "hacking",
+        "malware",
+        "cybersecurity",
+        "cybercrime",
+        "infosec",
+        "axios",
+        "supply chain attack"
+      ],
+      "description": "A hacker inserted malware in Axios, an open source web tool downloaded tens of millions of times weekly, in a widespread hack.",
+      "content": "A hacker inserted malware in Axios, an open source web tool downloaded tens of millions of times weekly, in a widespread hack.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "FedEx chooses partnerships over proprietary tech for its automation strategy",
+      "link": "https://techcrunch.com/2026/03/31/fedex-chooses-partnerships-over-proprietary-tech-for-its-automation-strategy/",
+      "pub_date": "Tue, 31 Mar 2026 15:46:50 +0000",
+      "categories": [
+        "Enterprise",
+        "Robotics",
+        "fedex",
+        "Automation",
+        "Aurora Innovation",
+        "last-mile delivery"
+      ],
+      "description": "FedEx recently announced a partnership with Berkshire Gray as the company works with external players to develop its automation tech.",
+      "content": "FedEx recently announced a partnership with Berkshire Gray as the company works with external players to develop its automation tech.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Nomadic raises $8.4 million to wrangle the data pouring off autonomous vehicles",
+      "link": "https://techcrunch.com/2026/03/31/nomadic-raises-8-4-million-to-wrangle-the-data-pouring-off-avs/",
+      "pub_date": "Tue, 31 Mar 2026 15:00:00 +0000",
+      "categories": [
+        "AI",
+        "Robotics",
+        "Startups",
+        "Exclusive",
+        "nomadic",
+        "physical ai",
+        "TQ Ventures"
+      ],
+      "description": "The company turns footage from robots into structured, searchable datasets with a deep learning model.",
+      "content": "The company turns footage from robots into structured, searchable datasets with a deep learning model.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "Health data giant CareCloud says hackers accessed patients’ medical records",
+      "link": "https://techcrunch.com/2026/03/31/carecloud-breach-hackers-accessed-patients-medical-records-ehr/",
+      "pub_date": "Tue, 31 Mar 2026 14:50:02 +0000",
+      "categories": [
+        "Security",
+        "carecloud",
+        "cyberattack",
+        "cybersecurity",
+        "data breach",
+        "electronic health records",
+        "medical data"
+      ],
+      "description": "CareCloud, a major provider of medical records storage, said hackers accessed one of its repositories of patient data earlier in March. It provides technology for more than 45,000 providers covering millions of patients.",
+      "content": "CareCloud, a major provider of medical records storage, said hackers accessed one of its repositories of patient data earlier in March. It provides technology for more than 45,000 providers covering millions of patients.",
+      "source_name": "TechCrunch",
+      "source_category": "科技",
+      "source_priority": "medium"
+    },
+    {
+      "title": "OpenAI kills Sora as Kling pulls ahead in AI video",
+      "link": "https://www.techinasia.com/news/openai-kills-sora-as-kling-pulls-ahead-in-ai-video",
+      "pub_date": "Wed, 01 Apr 2026 10:21:01 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "China",
+        "kuaishou technology",
+        "openai"
+      ],
+      "description": "Kling AI averaged 7.8 million monthly active users OpenAI kills Sora as Kling pulls ahead in AI videoin March vs. 4.7 million for Sora.",
+      "content": "Kling AI averaged 7.8 million monthly active users OpenAI kills Sora as Kling pulls ahead in AI videoin March vs. 4.7 million for Sora.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "VinFast reportedly delays break-even target beyond 2027",
+      "link": "https://www.techinasia.com/news/vinfast-reportedly-delays-breakeven-target-2027",
+      "pub_date": "Wed, 01 Apr 2026 10:07:44 +0000",
+      "categories": [
+        "News",
+        "Transportation",
+        "EV",
+        "Pham Nhat Vuong",
+        "Vietnam",
+        "VinFast"
+      ],
+      "description": "VinFast has expanded into Indonesia, India, and the Philippines while scaling back US and Europe plans.",
+      "content": "VinFast has expanded into Indonesia, India, and the Philippines while scaling back US and Europe plans.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Chinese chipmakers secure nearly half of local market: report",
+      "link": "https://www.techinasia.com/news/chinese-chipmakers-secure-local-market-report",
+      "pub_date": "Wed, 01 Apr 2026 10:05:10 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "AI chipmakers",
+        "China",
+        "huawei",
+        "NVIDIA"
+      ],
+      "description": "Huawei led Chinese AI chipmakers with 812,000 AI accelerator cards shipped in 2025.",
+      "content": "Huawei led Chinese AI chipmakers with 812,000 AI accelerator cards shipped in 2025.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "How smaller funds stay competitive in a scale-driven market",
+      "link": "https://www.techinasia.com/how-smaller-funds-stay-competitive-in-a-scale-driven-market",
+      "pub_date": "Wed, 01 Apr 2026 10:00:37 +0000",
+      "categories": [
+        "Opinion",
+        "investment",
+        "Kapital Ventures",
+        "TL;DL",
+        "venture capital"
+      ],
+      "description": "Kamran Ansari, founder of Kapital Ventures, says venture firms must choose between scale and focus, as trying to do both weakens their edge.",
+      "content": "Kamran Ansari, founder of Kapital Ventures, says venture firms must choose between scale and focus, as trying to do both weakens their edge.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Australia passes crypto licensing law for exchanges",
+      "link": "https://www.techinasia.com/news/australia-passes-crypto-licensing-law-for-exchanges",
+      "pub_date": "Wed, 01 Apr 2026 09:59:31 +0000",
+      "categories": [
+        "Crypto",
+        "Fintech",
+        "News",
+        "ASIC",
+        "Australia",
+        "cryptocurrency",
+        "digital assets"
+      ],
+      "description": "Licensed operators must follow standardized safeguards, disclosures, dispute resolution and compensation systems.",
+      "content": "Licensed operators must follow standardized safeguards, disclosures, dispute resolution and compensation systems.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Microsoft commits $5.5b to Singapore AI cloud buildout",
+      "link": "https://www.techinasia.com/news/microsoft-commits-5-5b-to-singapore-ai-cloud-buildout",
+      "pub_date": "Wed, 01 Apr 2026 09:50:19 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "Cloud",
+        "Microsoft",
+        "Singapore"
+      ],
+      "description": "The budget will support cloud and AI infrastructure and ongoing operations over the five-year period.",
+      "content": "The budget will support cloud and AI infrastructure and ongoing operations over the five-year period.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "India’s homegrown AI put to test",
+      "link": "https://www.techinasia.com/indias-homegrown-ai-put-test",
+      "pub_date": "Wed, 01 Apr 2026 09:30:21 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "Newsletters",
+        "Startups",
+        "artificial intelligence",
+        "bengaluru",
+        "daily newsletter",
+        "India",
+        "large language models",
+        "llm",
+        "Sarvam AI"
+      ],
+      "description": "In this issue: the Sarvam adoption test, the limits of language in the AI race, and gaming’s global playbook.",
+      "content": "In this issue: the Sarvam adoption test, the limits of language in the AI race, and gaming’s global playbook.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Google Play fee cut faces South Korea push for faster rollout",
+      "link": "https://www.techinasia.com/news/google-play-fee-cut-faces-south-korea-push-for-faster-rollout",
+      "pub_date": "Wed, 01 Apr 2026 09:08:06 +0000",
+      "categories": [
+        "News",
+        "Google",
+        "Google Play",
+        "government",
+        "South Korea"
+      ],
+      "description": "Korea's regulator urged Google to bring forward the rollout from December, citing the burden on domestic developers.",
+      "content": "Korea's regulator urged Google to bring forward the rollout from December, citing the burden on domestic developers.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Meet the 80 top-funded startups and tech companies in Southeast Asia",
+      "link": "https://www.techinasia.com/top-funded-startups-tech-companies-southeast-asia",
+      "pub_date": "Wed, 01 Apr 2026 09:00:00 +0000",
+      "categories": [
+        "Investments",
+        "Premium Content",
+        "Startups",
+        "funding lists",
+        "Southeast Asia",
+        "Startup funding lists",
+        "startups"
+      ],
+      "description": "Here are the companies in Southeast Asia that are attracting tons of investors and have the resources to spend on software, talent, and expansion.",
+      "content": "Here are the companies in Southeast Asia that are attracting tons of investors and have the resources to spend on software, talent, and expansion.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "South Korea, Indonesia launch cross-border QR payments",
+      "link": "https://www.techinasia.com/news/south-korea-indonesia-launch-cross-border-qr-payments",
+      "pub_date": "Wed, 01 Apr 2026 08:50:51 +0000",
+      "categories": [
+        "News",
+        "Bank of Korea",
+        "cross-border payments",
+        "Indonesia",
+        "South Korea"
+      ],
+      "description": "Users can pay at around 32 million QR merchants in Indonesia, while Indonesian users can pay in South Korea using Seoul Pay QR.",
+      "content": "Users can pay at around 32 million QR merchants in Indonesia, while Indonesian users can pay in South Korea using Seoul Pay QR.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "China’s UBTech jumps on 23-fold surge in humanoid robot sales",
+      "link": "https://www.techinasia.com/news/chinas-ubtech-jumps-23fold-surge-humanoid-robot-sales",
+      "pub_date": "Wed, 01 Apr 2026 08:32:34 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "Robotics",
+        "ai",
+        "China",
+        "robotics",
+        "UBtech"
+      ],
+      "description": "UBTech sold 1,079 full-size humanoid robots in 2025, up from just three in 2024.",
+      "content": "UBTech sold 1,079 full-size humanoid robots in 2025, up from just three in 2024.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Chinese AI startup Z.ai appoints new Singapore country manager",
+      "link": "https://www.techinasia.com/news/chinese-ai-startup-z-ai-appoints-new-singapore-country-manager",
+      "pub_date": "Wed, 01 Apr 2026 08:28:40 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "Startups",
+        "ai",
+        "China",
+        "Jay Teo",
+        "Z.ai"
+      ],
+      "description": "Teo previously worked on an AI investment thesis and startup accelerator in venture capital.",
+      "content": "Teo previously worked on an AI investment thesis and startup accelerator in venture capital.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Shenzhen launches 10,000-card AI cluster with Huawei chips",
+      "link": "https://www.techinasia.com/news/shenzhen-launches-10000card-ai-cluster-huawei-chips",
+      "pub_date": "Wed, 01 Apr 2026 07:33:27 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "AI computing",
+        "China",
+        "huawei",
+        "Shenzhen"
+      ],
+      "description": "Nearly 50 organizations have signed framework agreements for the new AI computing cluster phase.",
+      "content": "Nearly 50 organizations have signed framework agreements for the new AI computing cluster phase.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Grab opens Southeast Asia’s first public robotaxi service",
+      "link": "https://www.techinasia.com/news/grab-opens-southeast-asias-first-public-robotaxi-service",
+      "pub_date": "Wed, 01 Apr 2026 07:32:51 +0000",
+      "categories": [
+        "News",
+        "Robotics",
+        "Transportation",
+        "autonomous vehicles",
+        "Grab",
+        "Singapore",
+        "weride"
+      ],
+      "description": "After testing since September, the fleet carried more than 1,000 riders and logged over 30,000 km in autonomously.",
+      "content": "After testing since September, the fleet carried more than 1,000 riders and logged over 30,000 km in autonomously.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "South Korea forms agentic AI alliance to shape ecosystem",
+      "link": "https://www.techinasia.com/news/south-korea-forms-agentic-ai-alliance-to-shape-ecosystem",
+      "pub_date": "Wed, 01 Apr 2026 07:17:12 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "agentic AI",
+        "Agentic AI Alliance",
+        "LG AI Research",
+        "South Korea"
+      ],
+      "description": "Members will split responsibilities across use cases, policy proposal, tool optimization, and AI safety standards.",
+      "content": "Members will split responsibilities across use cases, policy proposal, tool optimization, and AI safety standards.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Baidu robotaxi outage in Wuhan revives safety concerns",
+      "link": "https://www.techinasia.com/news/baidu-robotaxi-outage-in-wuhan-revives-safety-concerns",
+      "pub_date": "Wed, 01 Apr 2026 07:01:12 +0000",
+      "categories": [
+        "News",
+        "Robotics",
+        "Transportation",
+        "Baidu Apollo Go",
+        "China",
+        "RoboTaxi",
+        "Wuhan"
+      ],
+      "description": "Local media reported some passengers were inside for nearly two hours.",
+      "content": "Local media reported some passengers were inside for nearly two hours.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Building a bridge for SEA’s EV retail ecosystem",
+      "link": "https://www.techinasia.com/b2b-engine-seas-15b-ev-retail-opportunity",
+      "pub_date": "Wed, 01 Apr 2026 07:00:28 +0000",
+      "categories": [
+        "Greentech",
+        "Startups",
+        "Digital Platforms",
+        "Digital retails",
+        "Evio",
+        "Retail",
+        "Startup spotlight"
+      ],
+      "description": "Evio offers a white-label solution for banks and OEMs, tackling the US$3,000 customer acquisition cost for a single auto loan in SEA.",
+      "content": "Evio offers a white-label solution for banks and OEMs, tackling the US$3,000 customer acquisition cost for a single auto loan in SEA.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "50 rising startups in Southeast Asia",
+      "link": "https://www.techinasia.com/50-rising-startups-southeast-asia",
+      "pub_date": "Wed, 01 Apr 2026 07:00:00 +0000",
+      "categories": [
+        "Investments",
+        "Premium Content",
+        "Startups",
+        "Asia",
+        "Funding",
+        "Rising startups on Tech in Asia",
+        "Southeast Asia"
+      ],
+      "description": "Which startups are on the path to becoming the next big thing?",
+      "content": "Which startups are on the path to becoming the next big thing?",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "TikTok applies for fintech license in Brazil",
+      "link": "https://www.techinasia.com/news/tiktok-applies-fintech-license-brazil",
+      "pub_date": "Wed, 01 Apr 2026 05:09:43 +0000",
+      "categories": [
+        "Fintech",
+        "News",
+        "brazil",
+        "ByteDance",
+        "fintech",
+        "TikTok"
+      ],
+      "description": "ByteDance executives, including global payments head Liao Baohua, met central bank chief Gabriel Galipolo in Brasilia earlier on Tuesday.",
+      "content": "ByteDance executives, including global payments head Liao Baohua, met central bank chief Gabriel Galipolo in Brasilia earlier on Tuesday.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "TSMC brings 3nm chips to Japan in $17b AI supply bet",
+      "link": "https://www.techinasia.com/news/tsmc-brings-3nm-chips-to-japan-in-17b-ai-supply-bet",
+      "pub_date": "Wed, 01 Apr 2026 05:02:44 +0000",
+      "categories": [
+        "News",
+        "3-nanometer",
+        "Japan",
+        "semiconductor",
+        "TSMC"
+      ],
+      "description": "The second plant would have monthly capacity of 15,000 12-inch wafers using 3-nanometer process technology.",
+      "content": "The second plant would have monthly capacity of 15,000 12-inch wafers using 3-nanometer process technology.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Uber app begins driverless WeRide robotaxi rides in Dubai",
+      "link": "https://www.techinasia.com/news/uber-app-begins-driverless-weride-robotaxi-rides-dubai",
+      "pub_date": "Wed, 01 Apr 2026 05:00:01 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "Transportation",
+        "autonomous vehicles",
+        "dubai",
+        "uber",
+        "weride"
+      ],
+      "description": "Uber owns 5.82% of WeRide, and invested US$100 million in WeRide last year said the partnership targets 15 more cities over five years.",
+      "content": "Uber owns 5.82% of WeRide, and invested US$100 million in WeRide last year said the partnership targets 15 more cities over five years.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "LG pushes AI tools to improve supplier manufacturing",
+      "link": "https://www.techinasia.com/news/lg-pushes-ai-tools-improve-supplier-manufacturing",
+      "pub_date": "Wed, 01 Apr 2026 04:33:29 +0000",
+      "categories": [
+        "Announcements",
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "LG Electronics",
+        "smart factory"
+      ],
+      "description": "LG said it plans to expand the programme to production sites in China, Vietnam, and Indonesia, as part of its broader smart factory initiative.",
+      "content": "LG said it plans to expand the programme to production sites in China, Vietnam, and Indonesia, as part of its broader smart factory initiative.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Ex-Amazon VP reveals the real game behind promotions",
+      "link": "https://www.techinasia.com/ex-amazon-vp-reveals-the-real-game-behind-promotions",
+      "pub_date": "Wed, 01 Apr 2026 04:30:03 +0000",
+      "categories": [
+        "Opinion",
+        "Amazon",
+        "Corporate politics",
+        "ethan evans",
+        "Former VP",
+        "management",
+        "promotions",
+        "TL;DL"
+      ],
+      "description": "Former Amazon VP Ethan Evans breaks down how internal dynamics shape promotions and what it takes to advance.",
+      "content": "Former Amazon VP Ethan Evans breaks down how internal dynamics shape promotions and what it takes to advance.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Oracle layoffs show AI data center costs reshaping Big Tech",
+      "link": "https://www.techinasia.com/news/oracle-layoffs-show-ai-data-center-costs-reshaping-big-tech",
+      "pub_date": "Wed, 01 Apr 2026 04:29:51 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "layoffs",
+        "openai",
+        "oracle"
+      ],
+      "description": "Shares were down 27% year to date at the time of the report as investors weighed competition from generative AI.",
+      "content": "Shares were down 27% year to date at the time of the report as investors weighed competition from generative AI.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "LG CNS launches robotics lab to expand automation push",
+      "link": "https://www.techinasia.com/news/lg-cns-launches-robotics-lab-expand-automation-push",
+      "pub_date": "Wed, 01 Apr 2026 04:21:01 +0000",
+      "categories": [
+        "Announcements",
+        "News",
+        "Robotics",
+        "LG CNS",
+        "robotics",
+        "robots",
+        "US"
+      ],
+      "description": "LG CNS will offer consulting services covering robot deployment planning, workflow redesign, and proof-of-concept testing under a three-step programme.",
+      "content": "LG CNS will offer consulting services covering robot deployment planning, workflow redesign, and proof-of-concept testing under a three-step programme.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "A list of fundraising startups from Asia and beyond (Updated)",
+      "link": "https://www.techinasia.com/visual-story/list-fundraising-startups-southeast-asia-india",
+      "pub_date": "Wed, 01 Apr 2026 04:00:00 +0000",
+      "categories": [
+        "Investments",
+        "Premium Content",
+        "fundraising",
+        "Startups"
+      ],
+      "description": "Fundraising is hard. To make things slightly easier, we've compiled this list of fundraising startups for our subscribers.",
+      "content": "Fundraising is hard. To make things slightly easier, we've compiled this list of fundraising startups for our subscribers.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Perplexity lawsuit puts AI privacy claims under pressure",
+      "link": "https://www.techinasia.com/news/perplexity-lawsuit-puts-ai-privacy-claims-under-pressure",
+      "pub_date": "Wed, 01 Apr 2026 03:57:18 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "Google",
+        "Meta",
+        "Perplexity AI",
+        "privacy lawsuit"
+      ],
+      "description": "The complaint says trackers sent users’ conversations, including in “Incognito” mode, to Meta and Google.",
+      "content": "The complaint says trackers sent users’ conversations, including in “Incognito” mode, to Meta and Google.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Coupang expands Taiwan AI logistics to reach 70% coverage",
+      "link": "https://www.techinasia.com/news/coupang-expands-taiwan-ai-logistics-to-reach-70-coverage",
+      "pub_date": "Wed, 01 Apr 2026 03:37:49 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "Ecommerce",
+        "News",
+        "Coupang",
+        "South Korea",
+        "Taiwan"
+      ],
+      "description": "The new site uses AI and robotics to extend service into central and southern Taiwan.",
+      "content": "The new site uses AI and robotics to extend service into central and southern Taiwan.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Anthropic code leak raises fresh questions over AI security",
+      "link": "https://www.techinasia.com/news/anthropic-code-leak-raises-fresh-questions-over-ai-security",
+      "pub_date": "Wed, 01 Apr 2026 03:27:23 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "Anthropic",
+        "Claude",
+        "cybersecurity"
+      ],
+      "description": "The exposure did not include customer data or credentials, and stemmed from a packaging mistake caused by human error.",
+      "content": "The exposure did not include customer data or credentials, and stemmed from a packaging mistake caused by human error.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Samsung raises foldable prices as chip, currency costs climb",
+      "link": "https://www.techinasia.com/news/samsung-raises-foldable-prices-as-chip-currency-costs-climb",
+      "pub_date": "Wed, 01 Apr 2026 03:22:46 +0000",
+      "categories": [
+        "News",
+        "foldable phones",
+        "samsung electronics",
+        "Smartphones",
+        "South Korea"
+      ],
+      "description": "In South Korea, the 512GB Galaxy Z Flip 7 now retails at 1.73 million won (US$1.146).",
+      "content": "In South Korea, the 512GB Galaxy Z Flip 7 now retails at 1.73 million won (US$1.146).",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Salesforce to update Slack with 30 new AI features",
+      "link": "https://www.techinasia.com/news/salesforce-update-slack-30-ai-features",
+      "pub_date": "Wed, 01 Apr 2026 03:22:08 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "Business-to-business",
+        "News",
+        "ai",
+        "salesforce",
+        "slack"
+      ],
+      "description": "Salesforce also said Slackbot now supports the Model Context Protocol, allowing it to connect with external tools, including Salesforce’s Agentforce platform.",
+      "content": "Salesforce also said Slackbot now supports the Model Context Protocol, allowing it to connect with external tools, including Salesforce’s Agentforce platform.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "China buyback pledges jump as firms move to steady stocks",
+      "link": "https://www.techinasia.com/news/china-buyback-pledges-jump-as-firms-move-to-steady-stocks",
+      "pub_date": "Wed, 01 Apr 2026 03:10:07 +0000",
+      "categories": [
+        "News",
+        "China",
+        "Haier Smart Home",
+        "Midea Group",
+        "share buybacks"
+      ],
+      "description": "Midea Group pledged up to 13 billion yuan (US$1.88 billion) in repurchases.",
+      "content": "Midea Group pledged up to 13 billion yuan (US$1.88 billion) in repurchases.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Anthropic signs AI safety data deal with Australia",
+      "link": "https://www.techinasia.com/news/anthropic-signs-ai-safety-data-deal-australia",
+      "pub_date": "Wed, 01 Apr 2026 03:07:33 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "Anthropic",
+        "Australia"
+      ],
+      "description": "Anthropic to sign an agreement with the Australian government to share data on AI adoption and its economic impact, as part of broader cooperation on AI safety.",
+      "content": "Anthropic to sign an agreement with the Australian government to share data on AI adoption and its economic impact, as part of broader cooperation on AI safety.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Chinese AI stocks swing on token demand bets, not profits",
+      "link": "https://www.techinasia.com/news/china-ai-token-seachinese-ai-stocks-swing-on-token-demand-bets-not-profitsllers-minimax-and-zhipu-see-wild-trading-swings",
+      "pub_date": "Wed, 01 Apr 2026 02:41:35 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "News",
+        "ai",
+        "China",
+        "MiniMax",
+        "Zhipu"
+      ],
+      "description": "MiniMax and Zhipu are being traded on expectations of rising AI token demand.",
+      "content": "MiniMax and Zhipu are being traded on expectations of rising AI token demand.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Fitness wearable maker Whoop raises $575m at a $10.1b valuation",
+      "link": "https://www.techinasia.com/news/whoop-raises-575m-101b-valuation-expand-healthcare",
+      "pub_date": "Wed, 01 Apr 2026 02:37:54 +0000",
+      "categories": [
+        "Investments",
+        "News",
+        "fitness wearable",
+        "healthcare",
+        "US",
+        "Whoop"
+      ],
+      "description": "Whoop raised about US$900 million to date. Abbott’s participation signals a deeper partnership, though details were not disclosed.",
+      "content": "Whoop raised about US$900 million to date. Abbott’s participation signals a deeper partnership, though details were not disclosed.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Nvidia backs Marvell with $2b to widen custom AI stack",
+      "link": "https://www.techinasia.com/news/nvidia-backs-marvell-with-2b-to-widen-custom-ai-stack",
+      "pub_date": "Wed, 01 Apr 2026 02:31:24 +0000",
+      "categories": [
+        "Artificial Intelligence",
+        "Investments",
+        "News",
+        "ai",
+        "Marvell Technology",
+        "NVIDIA",
+        "semiconductor"
+      ],
+      "description": "An eMarketer analyst said the deal gives Nvidia access to Marvell’s semi-custom silicon and optical interconnect technology.",
+      "content": "An eMarketer analyst said the deal gives Nvidia access to Marvell’s semi-custom silicon and optical interconnect technology.",
+      "source_name": "TechInAsia",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Efficiency at Scale: NVIDIA, Energy Leaders Accelerating Power‑Flexible AI Factories to Fortify the Grid",
+      "link": "https://blogs.nvidia.com/blog/energy-efficiency-ai-factories-grid/",
+      "pub_date": "Tue, 31 Mar 2026 15:00:51 +0000",
+      "categories": [
+        "AI Infrastructure",
+        "Corporate",
+        "AI for Good",
+        "Omniverse Enterprise"
+      ],
+      "description": "CERAWeek — dubbed the Davos of energy — is where policymakers, producers, technologists and financiers gather to discuss how the world powers itself next.  NVIDIA and Emerald AI unveiled at the conference last week a new way forward — treating AI factories not as static power loads but as flexible, intelligent grid assets. This collaboration [&#8230;]",
+      "content": "<div id=\"bsf_rt_marker\"></div><p><span style=\"font-weight: 400;\">CERAWeek — dubbed the Davos of energy — is where policymakers, producers, technologists and financiers gather to discuss how the world powers itself next. </span></p>\n<p><span style=\"font-weight: 400;\">NVIDIA and Emerald AI </span><a target=\"_blank\" href=\"https://nvidianews.nvidia.com/news/nvidia-and-emerald-ai-join-leading-energy-companies-to-pioneer-flexible-ai-factories-as-grid-assets\"><span style=\"font-weight: 400;\">unveiled</span></a><span style=\"font-weight: 400;\"> at the conference last week a new way forward — treating AI factories not as static power loads but as flexible, intelligent grid assets. This collaboration unifies accelerated computing, AI factory reference architectures and real‑time energy orchestration, helping large AI deployments connect to the grid faster, operate more efficiently and fortify system reliability.</span></p>\n<p><span style=\"font-weight: 400;\">Built on the </span><a target=\"_blank\" href=\"https://nvidianews.nvidia.com/news/nvidia-releases-vera-rubin-dsx-ai-factory-reference-design-and-omniverse-dsx-digital-twin-blueprint-with-broad-industry-support\"><span style=\"font-weight: 400;\">NVIDIA Vera Rubin DSX AI Factory reference design</span></a><span style=\"font-weight: 400;\"> and Emerald AI’s Conductor platform, the approach brings together compute, power networking and control into a single architecture. The result is an AI factory that can generate high‑value AI tokens while dynamically responding to grid conditions — flexing when needed, supporting reliability and reducing the need to overbuild infrastructure for peak demand.</span><a target=\"_blank\" href=\"https://nvidia-my.sharepoint.com/personal/scmartin_nvidia_com/Documents/Microsoft%20Copilot%20Chat%20Files/CERAWeek2026.pdf\"><span style=\"font-weight: 400;\"> </span></a></p>\n<p><span style=\"font-weight: 400;\">AES, Constellation, Invenergy, NextEra Energy, Nscale Energy &amp; Power and Vistra are working to build the energy generation capacity needed to meet rapidly growing power demand. The companies plan to collaborate on optimized generation strategies to support AI factories built on the NVIDIA and Emerald AI architecture, including hybrid projects that use co‑located power to accelerate time to power while delivering value to the broader grid. By pairing large AI loads with flexible operations, new generation resources and intelligent controls, this approach strengthens grid reliability. </span></p>\n<p><span style=\"font-weight: 400;\">It’s an important milestone in grid resilience, supported by an ecosystem for advanced AI factories. This new computing infrastructure paradigm — described by NVIDIA founder and CEO Jensen Huang as a </span><a href=\"https://blogs.nvidia.com/blog/ai-5-layer-cake/\"><span style=\"font-weight: 400;\">five-layer AI cake</span></a><span style=\"font-weight: 400;\"> — has energy as its foundational layer. </span></p>\n<h2><b>Driving Improvements in Tokens Per Second Per Watt</b></h2>\n<p><span style=\"font-weight: 400;\">Power constraints are reshaping AI data centers, with energy efficiency or </span><a target=\"_blank\" href=\"https://developer.nvidia.com/blog/scaling-token-factory-revenue-and-ai-efficiency-by-maximizing-performance-per-watt/\"><span style=\"font-weight: 400;\">performance per watt</span></a><span style=\"font-weight: 400;\">, specifically tokens per second per watt, the defining metric of our modern computing infrastructure. By prioritizing computational efficiency, organizations can lower operating costs, maximize revenue and create a resilient digital infrastructure for businesses and consumers across America and worldwide. </span></p>\n<p><span style=\"font-weight: 400;\">“Power is a concern, but it’s not the only concern,” Huang </span><a target=\"_blank\" href=\"https://www.youtube.com/watch?v=vif8NQcjVf0\"><span style=\"font-weight: 400;\">said</span></a><span style=\"font-weight: 400;\"> on a recent Lex Fridman podcast. “That’s the reason why we’re pushing so hard on extreme codesign, so that we can improve the tokens per second per watt orders of magnitude every single year.” </span></p>\n<p><span style=\"font-weight: 400;\">NVIDIA has a long history of driving performance and energy efficiency. From the NVIDIA Kepler GPU in 2012 to the NVIDIA Vera Rubin platform this year, the number of tokens generated within the same power budget has increased by more than 1 million times. </span></p>\n<p><span style=\"font-weight: 400;\">It takes industry collaboration across the five-layer AI cake — from energy to chips, infrastructure, models and applications — to make this happen.</span></p>\n<h2><b>Robotics, Digital Twins and AI Upskilling Drive Energy Advances</b></h2>\n<p><span style=\"font-weight: 400;\">NVIDIA ecosystem partners showcased at the event how AI, simulation and workforce innovation are accelerating the energy infrastructure needed to support the intelligence era. Announcements from Maximo, TerraPower and Adaptive Construction Solutions exemplify how AI is compressing timelines across construction, power generation and talent development.</span></p>\n<p><b>Maximo</b><span style=\"font-weight: 400;\">, a solar robotics company incubated at AES, announced the completion of a 100‑megawatt robotic solar installation at AES’ Bellefield site. Using AI‑driven robotics developed with NVIDIA accelerated computing, NVIDIA Omniverse libraries and the NVIDIA Isaac Sim framework, Maximo demonstrated that autonomous installations can now operate reliably at utility scale. The approach improves installation speed, safety and consistency, helping close the gap between rising electricity demand and construction capacity.</span></p>\n<p><b>TerraPower</b><span style=\"font-weight: 400;\">, working with SoftServe, previewed an NVIDIA Omniverse‑powered digital twin platform designed to dramatically shorten advanced nuclear plant siting and design timelines. By applying AI and simulation to early‑stage engineering, the platform reduces design cycles from years to months, accelerating deployment of TerraPower’s Natrium energy plants while improving design and grid integration.</span></p>\n<p><b>Adaptive Construction Solutions</b><span style=\"font-weight: 400;\"> announced a national registered apprenticeship initiative, in collaboration with NVIDIA, to help build the skilled workforce required for AI factories and energy infrastructure. The program aims to scale training for critical trades, expanding access to high‑demand careers while supporting the rapid buildout of AI‑driven power systems.</span></p>\n<p><span style=\"font-weight: 400;\">The efforts articulated how AI, digital twins and workforce innovation are converging to deliver faster, more resilient energy infrastructure.</span></p>\n<h2><b>Coming Together on Scaling AI Factories for Grid Reliability </b></h2>\n<p><span style=\"font-weight: 400;\">GE Vernova, Schneider Electric and Vertiv highlighted how digital twins, validated reference designs and converged infrastructure are becoming essential to scaling AI factories as reliable grid participants. The announcements address the “power‑to‑rack” challenge — designing AI infrastructure as an integrated energy and compute system from day one.</span><a target=\"_blank\" href=\"https://outlook.office365.com/owa/?ItemID=AAMkADliYmM1NzE1LTI1ZWQtNDZiZi04ODdiLTliNTY2ZTcwNGIyZgBGAAAAAAAr7b9T6Xr4QL8ZMgM62W00BwAs%2frWe23lgS7hsVqui3ao8AAAAAAEMAACT3dXC5pPvTJzcVsaDJqwAAAedCWKUAAA%3d&amp;exvsurl=1&amp;viewmodel=ReadMessageItem\"><span style=\"font-weight: 400;\"> </span></a></p>\n<p><b>GE Vernova</b><span style=\"font-weight: 400;\"> outlined how high‑fidelity digital twins aligned with the </span><a target=\"_blank\" href=\"https://build.nvidia.com/nvidia/omniverse-dsx-blueprint-for-ai-factories\"><span style=\"font-weight: 400;\">NVIDIA Omniverse DSX Blueprint</span></a><span style=\"font-weight: 400;\"> enable utilities and developers to simulate grid behavior, substations and AI factory loads together before deployment. Such system‑level modeling helps validate interconnection strategies, reduce risk and accelerate time to power in constrained grid environments.</span></p>\n<p><b>Schneider Electric</b><span style=\"font-weight: 400;\"> announced new validated NVIDIA Vera Rubin reference designs and lifecycle digital twin architectures developed with AVEVA. By simulating power, cooling and controls in Omniverse, Schneider enables operators to optimize performance per watt, validate designs before buildout and operate AI factories more efficiently and predictably at scale.</span></p>\n<p><iframe title=\"NVIDIA GTC Studio with Insights from Schneider Electric\" width=\"1200\" height=\"675\" src=\"https://www.youtube.com/embed/lBNHFR41GgY?feature=oembed\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></p>\n<p><b>Vertiv </b><span style=\"font-weight: 400;\">outlined converged, simulation‑ready physical infrastructure built on repeatable power and cooling building blocks. Integrated with the Vera Rubin DSX reference design, Vertiv’s approach reduces design and deployment complexity while supporting faster, more confident scaling of AI factories.</span></p>\n<p><iframe title=\"NVIDIA GTC Studio with Insights from Vertiv\" width=\"1200\" height=\"675\" src=\"https://www.youtube.com/embed/MyNEr7tf-WQ?feature=oembed\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share\" referrerpolicy=\"strict-origin-when-cross-origin\" allowfullscreen></iframe></p>\n<p><span style=\"font-weight: 400;\">Together, these industry efforts provide a digital path forward, including the validated architectures and physical infrastructure needed to turn AI factories into flexible, grid‑aware assets for efficiently powering the world.</span></p>\n<p><i><span style=\"font-weight: 400;\">Learn more about how NVIDIA and its partners are advancing </span></i><a target=\"_blank\" href=\"https://www.nvidia.com/en-us/industries/energy/\"><i><span style=\"font-weight: 400;\">energy solutions with AI and high-performance computing</span></i></a><i><span style=\"font-weight: 400;\">.</span></i></p>",
+      "source_name": "Nvidia Blog",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "AI can push your Stream Deck buttons for you",
+      "link": "https://www.theverge.com/tech/905021/elgato-stream-deck-mcp-ai-agent-update",
+      "pub_date": "2026-04-01T08:38:58-04:00",
+      "categories": [
+        "AI",
+        "Gadgets",
+        "News",
+        "Tech"
+      ],
+      "description": "If you're tired of controlling Stream Deck devices by manually pushing buttons, then good news: Elgato will now let you delegate that task to a chatbot instead. The Stream Deck 7.4 software update released today introduces Model Context Protocol (MCP) support, allowing AI assistants like Claude, ChatGPT, and Nvidia G-Assist to find and activate Stream [&#8230;]",
+      "content": "If you're tired of controlling Stream Deck devices by manually pushing buttons, then good news: Elgato will now let you delegate that task to a chatbot instead. The Stream Deck 7.4 software update released today introduces Model Context Protocol (MCP) support, allowing AI assistants like Claude, ChatGPT, and Nvidia G-Assist to find and activate Stream [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Baidu’s robotaxis froze in traffic, creating chaos",
+      "link": "https://www.theverge.com/ai-artificial-intelligence/905012/baidu-apollo-robotaxi-freeze-china",
+      "pub_date": "2026-04-01T06:39:52-04:00",
+      "categories": [
+        "AI",
+        "Autonomous Cars",
+        "News",
+        "Transportation"
+      ],
+      "description": "Numerous robotaxis operated by Chinese tech giant Baidu froze in a major city on Tuesday, reportedly trapping passengers inside, stranding them on highways, and causing at least one accident in snarled traffic. Police in Wuhan confirmed receiving multiple reports of Baidu's Apollo Go robotaxis stopping in the middle of streets and being unable to move. [&#8230;]",
+      "content": "Numerous robotaxis operated by Chinese tech giant Baidu froze in a major city on Tuesday, reportedly trapping passengers inside, stranding them on highways, and causing at least one accident in snarled traffic. Police in Wuhan confirmed receiving multiple reports of Baidu's Apollo Go robotaxis stopping in the middle of streets and being unable to move. [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "The best deals to shop during the last few hours of Amazon’s Big Spring Sale",
+      "link": "https://www.theverge.com/gadgets/899580/best-amazon-big-spring-sale-2026-deals",
+      "pub_date": "2026-03-31T21:14:30-04:00",
+      "categories": [
+        "Deals",
+        "Gadgets",
+        "Tech",
+        "Verge Shopping"
+      ],
+      "description": "Amazon loves to manufacture an event. March is historically a dry spell for deals; however, with Amazon’s third annual Big Spring Sale, which runs through 11:59PM PT tonight, the retail behemoth is hoping to lure in would-be shoppers with the promise of steep(ish) savings and discounts on more seasonal, spring-centric items to hold folks over [&#8230;]",
+      "content": "Amazon loves to manufacture an event. March is historically a dry spell for deals; however, with Amazon’s third annual Big Spring Sale, which runs through 11:59PM PT tonight, the retail behemoth is hoping to lure in would-be shoppers with the promise of steep(ish) savings and discounts on more seasonal, spring-centric items to hold folks over [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Amazon&#8217;s Big Spring Sale 2026: all of the latest deals",
+      "link": "https://www.theverge.com/gadgets/897580/amazon-big-spring-sale-2026-deals-news",
+      "pub_date": "2026-03-31T20:45:00-04:00",
+      "categories": [
+        "Deals",
+        "Gadgets",
+        "Verge Shopping"
+      ],
+      "description": "If you&#8217;re looking for the best time to get a deal this spring, it might very well be during Amazon&#8217;s Big Spring Sale, which runs through 11:59PM PT tonight. We’re still highlighting the best that the sale has to offer, including the many so-called “doorbuster” deals that will appear throughout the remainder of the seasonal [&#8230;]",
+      "content": "If you&#8217;re looking for the best time to get a deal this spring, it might very well be during Amazon&#8217;s Big Spring Sale, which runs through 11:59PM PT tonight. We’re still highlighting the best that the sale has to offer, including the many so-called “doorbuster” deals that will appear throughout the remainder of the seasonal [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "The AirPods Pro 3 are nearly matching their best-ever price for Amazon’s Big Spring Sale",
+      "link": "https://www.theverge.com/gadgets/898502/airpods-pro-3-amazon-big-spring-sale-2026-deal",
+      "pub_date": "2026-03-31T19:53:47-04:00",
+      "categories": [
+        "Apple",
+        "Deals",
+        "Gadgets",
+        "Headphones",
+        "Tech",
+        "Verge Shopping"
+      ],
+      "description": "Earlier this month, Apple announced the AirPods Max 2, a pair of over-ear headphones that leverage the company’s H2 chip for AI-powered live translation, conversation awareness, and a host of newer features. However, if you’re okay with a pair of earbuds, the AirPods Pro 3 offer access to all the same features for less — [&#8230;]",
+      "content": "Earlier this month, Apple announced the AirPods Max 2, a pair of over-ear headphones that leverage the company’s H2 chip for AI-powered live translation, conversation awareness, and a host of newer features. However, if you’re okay with a pair of earbuds, the AirPods Pro 3 offer access to all the same features for less — [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Amazon is offering up to 50 percent off chargers from Anker and others for its Big Spring Sale",
+      "link": "https://www.theverge.com/gadgets/904242/amazon-big-spring-sale-2026-baseus-anker-chargers-power-banks-batteries-deals",
+      "pub_date": "2026-03-31T19:00:00-04:00",
+      "categories": [
+        "Deals",
+        "Gadgets",
+        "Verge Shopping"
+      ],
+      "description": "Amazon’s Big Spring Sale may not have been as “big” as Black Friday or even Prime Day, but depending on what you’re after, the discounts are more appealing than you might think. Take charging accessories, for instance. Anker, Twelve South, Baseus, and others have sharply lowered the prices of some of our favorite add-ons, including [&#8230;]",
+      "content": "Amazon’s Big Spring Sale may not have been as “big” as Black Friday or even Prime Day, but depending on what you’re after, the discounts are more appealing than you might think. Take charging accessories, for instance. Anker, Twelve South, Baseus, and others have sharply lowered the prices of some of our favorite add-ons, including [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Claude Code leak exposes a Tamagotchi-style ‘pet’ and an always-on agent",
+      "link": "https://www.theverge.com/ai-artificial-intelligence/904776/anthropic-claude-source-code-leak",
+      "pub_date": "2026-03-31T18:24:19-04:00",
+      "categories": [
+        "AI",
+        "Anthropic",
+        "News",
+        "Security",
+        "Tech"
+      ],
+      "description": "After Anthropic released Claude Code's 2.1.88 update, users quickly discovered that it contained a package with a source map file containing its TypeScript codebase, with one person on X calling attention to the leak and posting a file containing the code. The leaked data reportedly contains more than 512,000 lines of code and provides a [&#8230;]",
+      "content": "After Anthropic released Claude Code's 2.1.88 update, users quickly discovered that it contained a package with a source map file containing its TypeScript codebase, with one person on X calling attention to the leak and posting a file containing the code. The leaked data reportedly contains more than 512,000 lines of code and provides a [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "You can grab a four-pack of Govee’s color-changing smart bulbs for just $27",
+      "link": "https://www.theverge.com/gadgets/904698/govee-smart-a19-led-color-bulbs-amazon-big-spring-sale-2026-deal",
+      "pub_date": "2026-03-31T17:59:47-04:00",
+      "categories": [
+        "Deals",
+        "Gadgets",
+        "Smart Home",
+        "Tech",
+        "Verge Shopping"
+      ],
+      "description": "Spring cleaning isn’t just about clearing things out. It’s also a chance to refresh your living space, and a simple place to start is smart lighting — specifically, Govee&#8217;s Smart A19 LED Light Bulbs. The color-changing bulbs can instantly change the vibe of your home, and now through the end of today, March 31st, you [&#8230;]",
+      "content": "Spring cleaning isn’t just about clearing things out. It’s also a chance to refresh your living space, and a simple place to start is smart lighting — specifically, Govee&#8217;s Smart A19 LED Light Bulbs. The color-changing bulbs can instantly change the vibe of your home, and now through the end of today, March 31st, you [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "You can now use ChatGPT with Apple’s CarPlay",
+      "link": "https://www.theverge.com/ai-artificial-intelligence/904676/apple-carplay-openai-chatgpt",
+      "pub_date": "2026-03-31T17:03:18-04:00",
+      "categories": [
+        "AI",
+        "Apple",
+        "News",
+        "OpenAI",
+        "Tech"
+      ],
+      "description": "ChatGPT is now accessible from your CarPlay dashboard if you have iOS 26.4 or newer and the latest version of the ChatGPT app, 9to5Mac reports. Apple's recently launched iOS 26.4 update added support for \"voice-based conversational apps\" in CarPlay, opening the door to let you use AI chatbots with voice features through Apple's in-car platform. [&#8230;]",
+      "content": "ChatGPT is now accessible from your CarPlay dashboard if you have iOS 26.4 or newer and the latest version of the ChatGPT app, 9to5Mac reports. Apple's recently launched iOS 26.4 update added support for \"voice-based conversational apps\" in CarPlay, opening the door to let you use AI chatbots with voice features through Apple's in-car platform. [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    },
+    {
+      "title": "Samsung’s new app claims to alleviate motion sickness using sound",
+      "link": "https://www.theverge.com/tech/904579/samsung-hearapy-mobile-app-galaxy-buds-motion-sickness-symptoms",
+      "pub_date": "2026-03-31T15:56:26-04:00",
+      "categories": [
+        "Apps",
+        "Gadgets",
+        "News",
+        "Samsung",
+        "Tech"
+      ],
+      "description": "Samsung released a new free app today called Hearapy, now available for Android devices through the Google Play store, that it claims can reduce the symptoms of motion sickness using just sound. The app's functionality is very straightforward. It plays a low 100Hz sine wave tone through a pair of connected headphones for 60 seconds. [&#8230;]",
+      "content": "Samsung released a new free app today called Hearapy, now available for Android devices through the Google Play store, that it claims can reduce the symptoms of motion sickness using just sound. The app's functionality is very straightforward. It plays a low 100Hz sine wave tone through a pair of connected headphones for 60 seconds. [&#8230;]",
+      "source_name": "The Verge",
+      "source_category": "科技",
+      "source_priority": "low"
+    }
+  ]
+}

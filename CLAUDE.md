@@ -24,7 +24,7 @@ Bubbles is a scheduled task runner that invokes Claude Code on a cron or one-tim
 The CLI starts the daemon via `syscall.ForkExec` (Linux/macOS only).
 
 ### IPC Protocol
-JSON-RPC over Unix socket at `~/.bubbles/bubblesd.sock`. One request per connection — no multiplexing or keepalive. Twelve methods defined in `internal/ipc/protocol.go` (`task.create`, `task.list`, `task.get`, `task.delete`, `task.pause`, `task.resume`, `task.run`, `task.logs`, `daemon.status`, `session.stats`, `session.export`, `feishu.notify`).
+JSON-RPC over Unix socket at `~/.bubbles/bubblesd.sock`. One request per connection — no multiplexing or keepalive. Sixteen methods defined in `internal/ipc/protocol.go` (`task.create`, `task.list`, `task.get`, `task.delete`, `task.pause`, `task.resume`, `task.run`, `task.logs`, `daemon.status`, `session.stats`, `session.export`, `feishu.notify`, `holding.list`, `holding.get`, `holding.upsert`, `holding.delete`).
 
 ### Two Execution Paths
 
@@ -40,13 +40,15 @@ Both paths run through the agent abstraction in `internal/agent/` (`agent.Client
 `bubbles session stats <session-id>` and `bubbles session export <session-id> -o file.html` run out-of-band pi session queries through the daemon (`internal/agent/session_ops.go` starts a short-lived `pi --mode rpc --session <id>` to answer `get_session_stats` / `export_html`).
 
 ### Pi Extension
-`extensions/bubbles-pi/` is a pi extension (TypeScript, loaded by pi via jiti) exposing `feishu_notify`, `bubbles_task`, `bubbles_status` tools and a `/bubbles` command. Tools reach bubblesd over the IPC unix socket (including `feishu.notify`, backed by `FeishuNotifier.NotifyText`). Its `tool_call` approval gate turns pi extension-UI confirm dialogs into Feishu cards via the RPC `extension_ui_request/response` subprotocol (`internal/agent/ui.go` defines the bridge contract; `internal/feishu/ui_bridge.go` renders confirm/select dialogs as cards with callback buttons). See `extensions/bubbles-pi/README.md`.
+`extensions/bubbles-pi/` is a pi extension (TypeScript, loaded by pi via jiti) exposing `feishu_notify`, `bubbles_task`, `bubbles_status`, `bubbles_holding` tools and a `/bubbles` command. Tools reach bubblesd over the IPC unix socket (including `feishu.notify`, backed by `FeishuNotifier.NotifyText`). Its `tool_call` approval gate turns pi extension-UI confirm dialogs into Feishu cards via the RPC `extension_ui_request/response` subprotocol (`internal/agent/ui.go` defines the bridge contract; `internal/feishu/ui_bridge.go` renders confirm/select dialogs as cards with callback buttons). See `extensions/bubbles-pi/README.md`.
 
 ### Conversation Branching
 Final answer cards carry a **🔄 重新回答** button and the `/refork` command lists earlier questions; both use pi's `fork` / `get_fork_messages` RPC commands (`RPCSession.Fork`) to re-run a prompt from a branch point, preserving prior answers in the session tree (`internal/feishu/channel.go`: `runRefork`, `HandleReforkCommand`).
 
 ### Data Layer
-SQLite via `mattn/go-sqlite3` (requires CGO). WAL mode, 5s busy timeout. Auto-migrates `tasks` and `execution_logs` tables on startup. Data directory: `~/.bubbles/`.
+SQLite via `mattn/go-sqlite3` (requires CGO). WAL mode, 5s busy timeout. Auto-migrates `tasks`, `execution_logs` and `holdings` tables on startup. Data directory: `~/.bubbles/`.
+
+Holdings (portfolio positions) live in the `holdings` table (`internal/store/holdings.go`, ticker PK with qty/cost/state/hypothesis/stop_loss/target/review_date/decision). Three access paths: CLI `bubbles holding list|get|set|rm` (`internal/cli/holding.go`), Feishu `/holding` command (`internal/feishu/holding.go`, `/holding 修改 HK.01810 成本=31.3` style key=value edits, destructive deletes need `确认`), and the pi `bubbles_holding` tool. `holding.upsert` is a partial update (omitted fields keep stored values; `name` required on create).
 
 Task IDs are time-based: `task_YYYYMMDDHHmmss` (potential collision if two tasks created within the same second). ExecutionLog IDs use UUIDs.
 
@@ -57,4 +59,4 @@ Task IDs are time-based: `task_YYYYMMDDHHmmss` (potential collision if two tasks
 - `robfig/cron/v3` — Cron scheduling
 - `spf13/cobra` — CLI framework
 - `mattn/go-sqlite3` — SQLite (CGO required)
-- `larksuite/oapi-sdk-go/v3` — Feishu/Lark bot SDK (**local replace directive** in go.mod points to `/Users/pauluszhou/Projects/oapi-sdk-go`; building elsewhere requires adjusting this)
+- `larksuite/oapi-sdk-go/v3` — Feishu/Lark bot SDK（公共代理依赖，v3.9.5；无本地 replace）
