@@ -30,8 +30,8 @@ type ChatSession struct {
 	firstMessage string // user's first message in this session (for display)
 	created      time.Time
 	lastActive   time.Time
-	sem          chan struct{}      // capacity-1 semaphore to serialize messages within this session
-	cancelFunc   context.CancelFunc // cancel the in-flight processMessage goroutine, nil when idle
+	sem          chan struct{}           // capacity-1 semaphore to serialize messages within this session
+	cancelFunc   context.CancelCauseFunc // cancel the in-flight run with a cause, nil when idle
 }
 
 // Name returns the display name of the session.
@@ -326,7 +326,7 @@ func (f *FeishuChannel) StopActiveSession(chatID string) error {
 	if s.cancelFunc == nil {
 		return fmt.Errorf("session is not running")
 	}
-	s.cancelFunc()
+	s.cancelFunc(errRunStoppedByUser)
 	slog.Info("feishu: session stop requested", "chat_id", chatID, "session_key", s.key)
 	return nil
 }
@@ -439,21 +439,44 @@ func (f *FeishuChannel) applyStreamEvent(cs *chatState, sessionKey string, state
 	}
 }
 
+// reportRunFailure classifies a failed run and tells the chat what happened.
+// A user /stop stays silent (the user asked for it); watchdog aborts and
+// unexpected errors get a visible message so the card is never left frozen
+// without explanation.
+func (f *FeishuChannel) reportRunFailure(ctx context.Context, chatID, sessionKey string, streamCtx context.Context, err error) {
+	cause := context.Cause(streamCtx)
+	switch {
+	case errors.Is(cause, errRunStoppedByUser):
+		slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
+	case errors.Is(cause, errRunStalled), errors.Is(cause, errRunExceeded):
+		slog.Warn("feishu: run aborted by watchdog", "chat_id", chatID, "session_key", sessionKey, "cause", cause, "error", err)
+		f.sendChatText(ctx, chatID, fmt.Sprintf("⏱ 任务已中止：%v。会话已保留，可发送消息继续，或用 /refork 重新回答。", cause))
+	default:
+		slog.Error("feishu: agent run failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		f.sendChatText(ctx, chatID, fmt.Sprintf("❌ 任务执行失败: %v", err))
+	}
+}
+
 // processMessage handles a single message with agent streaming in its own goroutine.
 func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, msg *types.NormalizedMessage, sessionKey string) {
 	chatID := msg.ChatID
 	cs := f.getChatState(chatID)
 
+	// Bound the run by inactivity, not a fixed deadline: every stream event
+	// re-arms the watchdog so long but progressing tasks are never cut off.
+	runCtx, watchdog := newRunContext(ctx, f.cfg.RunStallTimeout(), f.cfg.RunMaxTimeout())
+	defer watchdog.Close()
+
 	// Create a cancellable child context and register the cancel func on the session.
 	// /stop calls this to abort the in-flight agent stream while preserving agentSID.
-	streamCtx, streamCancel := context.WithCancel(ctx)
+	streamCtx, streamCancel := context.WithCancelCause(runCtx)
 	cs.mu.Lock()
 	if s, ok := cs.sessions[sessionKey]; ok {
 		s.cancelFunc = streamCancel
 	}
 	cs.mu.Unlock()
 	defer func() {
-		streamCancel() // release context resources
+		streamCancel(nil) // release context resources
 		cs.mu.Lock()
 		if s, ok := cs.sessions[sessionKey]; ok {
 			s.cancelFunc = nil
@@ -499,18 +522,18 @@ func (f *FeishuChannel) processMessage(ctx context.Context, ch types.Channel, ms
 	}
 
 	err = f.agentClient.StreamWithEvents(streamCtx, msg.Content, f.cfg.WorkDir, resumeSessionID, func(event agent.StreamEvent) error {
+		watchdog.Touch()
 		f.applyStreamEvent(cs, sessionKey, state, event)
 		return streamCtrl.UpdateCard(streamCtx, state.BuildCardWithName(sessionName))
 	})
 
-	streamCtrl.Close(streamCtx)
+	// Card flush and failure notices must survive a canceled run context.
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), cardOpTimeout)
+	defer closeCancel()
+	streamCtrl.Close(closeCtx)
 
 	if err != nil {
-		if streamCtx.Err() != nil {
-			slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
-			return
-		}
-		slog.Error("feishu: agent stream failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		f.reportRunFailure(closeCtx, chatID, sessionKey, streamCtx, err)
 		return
 	}
 
@@ -545,7 +568,11 @@ func (f *FeishuChannel) processMessageRPC(ctx context.Context, ch types.Channel,
 		return
 	}
 
-	streamCtx, streamCancel := context.WithCancel(ctx)
+	// Bound the run by inactivity, not a fixed deadline (see runwatchdog.go).
+	runCtx, watchdog := newRunContext(ctx, f.cfg.RunStallTimeout(), f.cfg.RunMaxTimeout())
+	defer watchdog.Close()
+
+	streamCtx, streamCancel := context.WithCancelCause(runCtx)
 	cs.mu.Lock()
 	sessionName := ""
 	if s, ok := cs.sessions[sessionKey]; ok {
@@ -557,7 +584,7 @@ func (f *FeishuChannel) processMessageRPC(ctx context.Context, ch types.Channel,
 	}
 	cs.mu.Unlock()
 	defer func() {
-		streamCancel()
+		streamCancel(nil)
 		cs.mu.Lock()
 		if s, ok := cs.sessions[sessionKey]; ok {
 			s.cancelFunc = nil
@@ -585,11 +612,15 @@ func (f *FeishuChannel) processMessageRPC(ctx context.Context, ch types.Channel,
 	}
 
 	err = sess.RunPrompt(streamCtx, msg.Content, func(event agent.StreamEvent) error {
+		watchdog.Touch()
 		f.applyStreamEvent(cs, sessionKey, state, event)
 		return streamCtrl.UpdateCard(streamCtx, state.BuildCardWithName(sessionName))
 	})
 
-	streamCtrl.Close(streamCtx)
+	// Card flush and failure notices must survive a canceled run context.
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), cardOpTimeout)
+	defer closeCancel()
+	streamCtrl.Close(closeCtx)
 
 	if errors.Is(err, agent.ErrRunInFlight) {
 		// Lost a start race with a concurrent message: steer instead.
@@ -597,11 +628,8 @@ func (f *FeishuChannel) processMessageRPC(ctx context.Context, ch types.Channel,
 		return
 	}
 	if err != nil {
-		if streamCtx.Err() != nil {
-			slog.Info("feishu: session stopped by user", "chat_id", chatID, "session_key", sessionKey)
-			return
-		}
-		slog.Error("feishu: pi rpc run failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
+		f.reportRunFailure(closeCtx, chatID, sessionKey, streamCtx, err)
+		return
 	}
 
 	for _, cardJSON := range state.BuildExtraCardsWithName(sessionName) {
@@ -640,7 +668,8 @@ func (f *FeishuChannel) runRefork(chatID, sessionKey, entryID string) {
 		f.sendChatText(context.Background(), chatID, "❌ 重新回答仅支持 pi agent")
 		return
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
+	// Prep RPC calls below are bounded; the re-run manages its own run context.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	sess, err := f.rpc.Get(ctx, rpcKey(chatID, sessionKey), f.getResumeSessionID(chatID, sessionKey))
@@ -682,7 +711,7 @@ func (f *FeishuChannel) runRefork(chatID, sessionKey, entryID string) {
 
 	slog.Info("feishu: refork re-running prompt", "chat_id", chatID, "session_key", sessionKey, "entry_id", entryID)
 	f.sendChatText(ctx, chatID, "🔄 已回到该提问，重新生成回答…")
-	f.processMessageRPC(ctx, f.ch, &types.NormalizedMessage{ChatID: chatID, Content: text}, sessionKey)
+	f.processMessageRPC(context.Background(), f.ch, &types.NormalizedMessage{ChatID: chatID, Content: text}, sessionKey)
 }
 
 // HandleReforkCommand lists forkable user messages as buttons so the user can
@@ -1064,8 +1093,8 @@ func (f *FeishuChannel) handleCreateTaskAction(ctx context.Context, event *types
 
 // runCreateTaskStream executes the agent in the background and streams results via card update.
 func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Minute)
-	defer cancel()
+	ctx, watchdog := newRunContext(context.Background(), f.cfg.RunStallTimeout(), f.cfg.RunMaxTimeout())
+	defer watchdog.Close()
 
 	state := newCardState(f.agentClient.DisplayName())
 	streamCtrl, err := f.ch.Stream(ctx, &types.SendInput{
@@ -1077,7 +1106,8 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
 		return
 	}
 
-	err = f.agentClient.StreamWithEventsTimeout(agentPrompt, f.cfg.WorkDir, "", func(event agent.StreamEvent) error {
+	err = f.agentClient.StreamWithEvents(ctx, agentPrompt, f.cfg.WorkDir, "", func(event agent.StreamEvent) error {
+		watchdog.Touch()
 		switch event.Type {
 		case "thinking":
 			state.SetThinking(event.Text)
@@ -1093,16 +1123,25 @@ func (f *FeishuChannel) runCreateTaskStream(chatID, agentPrompt string) {
 		return streamCtrl.UpdateCard(ctx, state.BuildCard())
 	})
 
-	streamCtrl.Close(ctx)
+	// Card flush and failure notices must survive a canceled run context.
+	closeCtx, closeCancel := context.WithTimeout(context.Background(), cardOpTimeout)
+	defer closeCancel()
+	streamCtrl.Close(closeCtx)
 
 	if err != nil {
-		slog.Error("feishu: agent stream failed for create task", "chat_id", chatID, "error", err)
+		if cause := context.Cause(ctx); errors.Is(cause, errRunStalled) || errors.Is(cause, errRunExceeded) {
+			slog.Warn("feishu: create task run aborted by watchdog", "chat_id", chatID, "cause", cause, "error", err)
+			f.sendChatText(closeCtx, chatID, fmt.Sprintf("⏱ 创建任务已中止：%v", cause))
+		} else {
+			slog.Error("feishu: agent stream failed for create task", "chat_id", chatID, "error", err)
+			f.sendChatText(closeCtx, chatID, fmt.Sprintf("❌ 任务创建失败: %v", err))
+		}
 		return
 	}
 
 	// Send extra cards if content was split
 	for _, cardJSON := range state.BuildExtraCards() {
-		if _, sendErr := f.ch.Send(ctx, &types.SendInput{ChatID: chatID, Card: cardJSON}); sendErr != nil {
+		if _, sendErr := f.ch.Send(closeCtx, &types.SendInput{ChatID: chatID, Card: cardJSON}); sendErr != nil {
 			slog.Error("feishu: failed to send extra card", "chat_id", chatID, "error", sendErr)
 		}
 	}

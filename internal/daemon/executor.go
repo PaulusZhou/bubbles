@@ -20,11 +20,14 @@ type Runner interface {
 
 // clientRunner delegates to an agent.Client.
 type clientRunner struct {
-	client *agent.Client
+	client  *agent.Client
+	timeout time.Duration // hard cap; non-streaming runs expose no progress signal
 }
 
 func (r *clientRunner) Run(prompt, workDir string) agent.Result {
-	return r.client.RunWithTimeout(prompt, workDir)
+	ctx, cancel := context.WithTimeout(context.Background(), r.timeout)
+	defer cancel()
+	return r.client.Run(ctx, prompt, workDir)
 }
 
 // Executor runs a task by invoking the agent.
@@ -42,7 +45,7 @@ func NewExecutor(s *store.Store, cfg *config.Config) *Executor {
 		store:     s,
 		agentName: client.DisplayName(),
 		workDir:   cfg.WorkDir,
-		runner:    &clientRunner{client: client},
+		runner:    &clientRunner{client: client, timeout: cfg.TaskTimeout()},
 	}
 }
 

@@ -164,3 +164,27 @@ func TestConfig_AgentBinary(t *testing.T) {
 		t.Errorf("AgentBinary() with pi agent = %q, want pi path", got)
 	}
 }
+
+func TestConfig_RunTimeoutDefaults(t *testing.T) {
+	cfg := &Config{}
+	if got := cfg.RunStallTimeout().Minutes(); got != 30 {
+		t.Errorf("RunStallTimeout default = %v, want 30m", got)
+	}
+	if got := cfg.RunMaxTimeout().Minutes(); got != 240 {
+		t.Errorf("RunMaxTimeout default = %v, want 240m", got)
+	}
+	if got := cfg.TaskTimeout().Minutes(); got != 120 {
+		t.Errorf("TaskTimeout default = %v, want 120m", got)
+	}
+
+	cfg = &Config{RunStallMinutes: 5, RunMaxMinutes: 60, TaskTimeoutMinutes: 90}
+	if got := cfg.RunStallTimeout().Minutes(); got != 5 {
+		t.Errorf("RunStallTimeout = %v, want 5m", got)
+	}
+	if got := cfg.RunMaxTimeout().Minutes(); got != 60 {
+		t.Errorf("RunMaxTimeout = %v, want 60m", got)
+	}
+	if got := cfg.TaskTimeout().Minutes(); got != 90 {
+		t.Errorf("TaskTimeout = %v, want 90m", got)
+	}
+}

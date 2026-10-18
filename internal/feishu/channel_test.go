@@ -663,7 +663,7 @@ func TestSession_StopActive(t *testing.T) {
 	// Set a cancel func
 	cs := fch.getChatState("chat_1")
 	cs.mu.Lock()
-	session.cancelFunc = func() {}
+	session.cancelFunc = func(error) {}
 	cs.mu.Unlock()
 
 	err = fch.StopActiveSession("chat_1")

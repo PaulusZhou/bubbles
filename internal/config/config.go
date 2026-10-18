@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -31,6 +32,9 @@ type Config struct {
 	PiModel           string `yaml:"pi_model"`            // optional model override passed to pi --model
 	PiRPCBehavior     string `yaml:"pi_rpc_behavior"`     // mid-run message behavior: "steer" (default) or "follow_up"
 	PiRPCIdleMinutes  int    `yaml:"pi_rpc_idle_minutes"` // idle TTL for pi RPC sessions in minutes, default 30
+	RunStallMinutes   int    `yaml:"run_stall_minutes"`   // abort a chat run after this many minutes without stream progress, default 30
+	RunMaxMinutes     int    `yaml:"run_max_minutes"`     // absolute cap on a single chat run in minutes, default 240
+	TaskTimeoutMinutes int   `yaml:"task_timeout_minutes"` // hard timeout for non-streaming scheduled task runs in minutes, default 120
 	DataDir           string `yaml:"data_dir"`
 	WorkDir           string `yaml:"work_dir"`
 }
@@ -96,6 +100,9 @@ func Load() (*Config, error) {
 	if v := os.Getenv("BUBBLES_DATA_DIR"); v != "" {
 		cfg.DataDir = v
 	}
+	overrideInt("BUBBLES_RUN_STALL_MINUTES", &cfg.RunStallMinutes)
+	overrideInt("BUBBLES_RUN_MAX_MINUTES", &cfg.RunMaxMinutes)
+	overrideInt("BUBBLES_TASK_TIMEOUT_MINUTES", &cfg.TaskTimeoutMinutes)
 
 	// Validate required fields
 	if cfg.WorkDir == "" {
@@ -118,8 +125,32 @@ func Load() (*Config, error) {
 	if cfg.PiRPCIdleMinutes < 0 {
 		return nil, fmt.Errorf("pi_rpc_idle_minutes must be >= 0, got %d", cfg.PiRPCIdleMinutes)
 	}
+	if cfg.RunStallMinutes < 0 {
+		return nil, fmt.Errorf("run_stall_minutes must be >= 0, got %d", cfg.RunStallMinutes)
+	}
+	if cfg.RunMaxMinutes < 0 {
+		return nil, fmt.Errorf("run_max_minutes must be >= 0, got %d", cfg.RunMaxMinutes)
+	}
+	if cfg.TaskTimeoutMinutes < 0 {
+		return nil, fmt.Errorf("task_timeout_minutes must be >= 0, got %d", cfg.TaskTimeoutMinutes)
+	}
 
 	return cfg, nil
+}
+
+// overrideInt applies an integer environment variable override, warning on
+// unparseable values instead of failing startup.
+func overrideInt(name string, dst *int) {
+	v := os.Getenv(name)
+	if v == "" {
+		return
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "warning: invalid %s %q: %v\n", name, v, err)
+		return
+	}
+	*dst = n
 }
 
 // AgentBinary returns the CLI path for the configured agent.
@@ -141,4 +172,31 @@ func (c *Config) PiRPCIdleTimeout() time.Duration {
 		return 30 * time.Minute
 	}
 	return time.Duration(c.PiRPCIdleMinutes) * time.Minute
+}
+
+// RunStallTimeout returns how long a chat run may go without stream progress
+// before it is aborted. Zero or negative selects the default.
+func (c *Config) RunStallTimeout() time.Duration {
+	if c.RunStallMinutes <= 0 {
+		return 30 * time.Minute
+	}
+	return time.Duration(c.RunStallMinutes) * time.Minute
+}
+
+// RunMaxTimeout returns the absolute cap on a single chat run.
+// Zero or negative selects the default.
+func (c *Config) RunMaxTimeout() time.Duration {
+	if c.RunMaxMinutes <= 0 {
+		return 240 * time.Minute
+	}
+	return time.Duration(c.RunMaxMinutes) * time.Minute
+}
+
+// TaskTimeout returns the hard timeout for non-streaming scheduled task runs.
+// Zero or negative selects the default.
+func (c *Config) TaskTimeout() time.Duration {
+	if c.TaskTimeoutMinutes <= 0 {
+		return 120 * time.Minute
+	}
+	return time.Duration(c.TaskTimeoutMinutes) * time.Minute
 }
