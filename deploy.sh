@@ -6,6 +6,9 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 cd "$REPO"
 
+# 与 Makefile 保持一致：go 常装在 /usr/local/go/bin（不在默认 PATH）
+export PATH="/usr/local/go/bin:/usr/local/bin:$PATH"
+
 echo "== bubbles 部署 =="
 echo "仓库: $REPO"
 
