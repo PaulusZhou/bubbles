@@ -29,3 +29,18 @@ Thumbs.db
 
 # Bubbles data
 .bubbles/
+
+# invest-system workspace artifacts (install.sh syncs skills/agents/prompts + data here when work_dir=repo)
+/skills/
+/agents/
+/prompts/
+/policy.yaml
+/decision-log.md
+/stocks/
+/holding/
+/industry/
+/events/
+/review/
+/rss-digest/
+/_snapshots/
+/mx_data/

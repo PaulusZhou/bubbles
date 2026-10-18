@@ -20,13 +20,20 @@ def load_policy(path: str | None) -> dict:
         return yaml.safe_load(open(path))
     here = os.path.dirname(os.path.abspath(__file__))
     candidates = []
-    # INVEST_ROOT（默认 = invest-system 包根）优先，其次 cwd 附近
+    # INVEST_ROOT > config work_dir > 包根 > cwd
     kit_root = os.path.normpath(os.path.join(here, "..", "..", ".."))
-    invest = os.environ.get("INVEST_ROOT", kit_root)
-    candidates.append(os.path.join(invest, "policy.yaml"))
+    invest = os.environ.get("INVEST_ROOT")
+    if invest:
+        candidates.append(os.path.join(invest, "policy.yaml"))
+    try:
+        cfg = os.path.expanduser("~/.bubbles/config.yaml")
+        wd = yaml.safe_load(open(cfg)).get("work_dir")
+        if wd:
+            candidates.append(os.path.join(wd, "policy.yaml"))
+    except Exception:
+        pass
     candidates.append(os.path.join(kit_root, "policy.yaml"))
-    cwd = os.getcwd()
-    candidates.append(os.path.join(cwd, "policy.yaml"))
+    candidates.append(os.path.join(os.getcwd(), "policy.yaml"))
     for c in candidates:
         c = os.path.normpath(c)
         if os.path.exists(c):

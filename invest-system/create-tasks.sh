@@ -12,7 +12,19 @@
 set -euo pipefail
 
 KIT="$(cd "$(dirname "$0")" && pwd)"
-WORK="${INVEST_ROOT:-$KIT}"   # 数据根 = 投资系统包目录（policy.yaml/decision-log.md/产出都在这里）
+WORK="${INVEST_ROOT:-}"
+if [ -z "$WORK" ]; then
+  WORK="$(python3 - <<'EOF'
+import os, yaml
+p = os.path.expanduser("~/.bubbles/config.yaml")
+try:
+    print(yaml.safe_load(open(p)).get("work_dir") or "")
+except Exception:
+    print("")
+EOF
+)"
+fi
+[ -z "$WORK" ] && WORK="$KIT"   # 工作区：INVEST_ROOT > config work_dir > 包目录
 DRY_RUN="${1:-}"
 
 run() {
