@@ -47,19 +47,17 @@ run create -n "投资系统-持仓决策-收盘" -s "30 15 * * 1-5" -p "工作�
 有触发 → 对该标的走完整 Step 3-8（含 invest-bear/invest-risk 对抗与 decision-record 落库）；
 无触发 → 只更新 bubbles holding 最新价并输出'今日无触发'。结论发飞书。"
 
-# 3) 持仓决策-周度（流程1全量，每标的独立子流程防上下文衰减）
+# 3) 持仓决策-周度（流程1全量，提示词复用 .pi/prompts/持仓决策.md 模板，单一来源）
 run create -n "投资系统-持仓决策-周度" -s "0 9 * * 6" -p "工作目录 ${WORK}。
-执行 holding-decision-review 技能 Step 0-9 全量（含投资环境四维）。
-【每标的独立子流程】逐标的单独跑：假设兑现核对→定向验证（快照落盘 _snapshots/）→invest-bear 证伪（自行取证≥3 新源）→invest-risk 风控→五选一决策→decision-record。
-每份决策书过 scripts/risk_check.py（退出码 1=阻断）。缺失信息创建 bubbles 一次性任务跟进。
-每份定稿决策书上传飞书：`lark-cli markdown +create --file <决策书> --as user`，URL 附到消息。
-待拍板清单发飞书；任何飞书通知失败重试至多 3 次，仍失败写入日志并标 🔴。"
+执行约束：每标的独立子流程防上下文衰减（对每个持仓单独跑一遍完整流程，等同逐个 /持仓决策 <ticker>）；缺失信息创建 bubbles 一次性任务跟进；任何飞书通知失败重试至多 3 次，仍失败写入日志并标 🔴。
 
-# 4) 新股决策-周度（流程2全量）
+/持仓决策"
+
+# 4) 新股决策-周度（流程2全量，提示词复用 .pi/prompts/新股决策.md 模板，单一来源）
 run create -n "投资系统-新股决策-周度" -s "0 10 * * 6" -p "工作目录 ${WORK}。
-执行 invest-system/prompts/新股决策.md 流程（skill: signal-monitor + industry-deep-analysis 候选生成
-→ stock-buying-evaluation 尽调 → invest-analyst/bear/risk 对抗 → 组合适配 → buy/reject decision-record）。
-候选 2-3 只；观察池超 15 只先淘汰最弱。决策书与待拍板清单发飞书。"
+执行约束：本次拍板 2-3 只；决策书与待拍板清单发飞书。
+
+/新股决策"
 
 # 5) 月度审计（目标追踪 + 回填 + 系统心跳）
 run create -n "投资系统-月度审计" -s "0 10 28 * *" -p "工作目录 ${WORK}。
@@ -68,6 +66,6 @@ run create -n "投资系统-月度审计" -s "0 10 28 * *" -p "工作目录 ${WO
 3) 卖出后 60 天回访（卖得对不对）+ 否决回访（重新考虑条件是否触发，错杀/躲过统计）；
 4) 【系统心跳】bubbles list 检查 5 条流水线近 30 天执行成功率，失败/超时告警；
 5) policy 参数修订提案 + 沙盒退出评估（连续 2 次纪律 A 级可建议 sandbox.mode=false）；
-6) 文档同步：新决策书用 `lark-cli markdown +create --file <文件> --as user` 上传并把 URL 附到月报（不需要脚本，逐个传即可）。月报发飞书。"
+6) 文档同步：新决策书用 lark-cli markdown +create --file <文件> --as user 上传并把 URL 附到月报（不需要脚本，逐个传即可）。月报发飞书。"
 
 echo "✅ 5 条流水线注册完成（bubbles list 查看；bubbles pause/resume 可停启）"
