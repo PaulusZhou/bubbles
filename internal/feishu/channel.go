@@ -373,6 +373,11 @@ func (f *FeishuChannel) cleanupSessions() {
 		cs.mu.Lock()
 		activeExpired := false
 		for key, s := range cs.sessions {
+			if s.cancelFunc != nil {
+				// A run is still streaming into this session: it is not idle, and
+				// dropping it mid-run loses agentSID and breaks /stop and resume.
+				continue
+			}
 			if now.Sub(s.lastActive) > sessionExpiry {
 				delete(cs.sessions, key)
 				slog.Info("feishu: session cleaned up", "chat_id", chatID, "session_key", key)
@@ -410,13 +415,23 @@ func rpcKey(chatID, sessionKey string) string {
 // stream event. The caller performs the card update afterwards.
 func (f *FeishuChannel) applyStreamEvent(cs *chatState, sessionKey string, state *cardState, event agent.StreamEvent) {
 	slog.Debug("feishu: stream event", "type", event.Type, "text_len", len(event.Text))
+
+	// Refresh on every event, not just session/result: a long tool-heavy run can
+	// go many minutes between those, and idle-based expiry must never treat an
+	// in-flight run as abandoned (it used to drop the session mid-run, losing
+	// agentSID and /stop).
+	cs.mu.Lock()
+	if s, ok := cs.sessions[sessionKey]; ok {
+		s.lastActive = time.Now()
+	}
+	cs.mu.Unlock()
+
 	switch event.Type {
 	case "system":
 		if event.SessionID != "" {
 			cs.mu.Lock()
 			if s, ok := cs.sessions[sessionKey]; ok {
 				s.agentSID = event.SessionID
-				s.lastActive = time.Now()
 				slog.Info("feishu: session updated", "session_key", sessionKey, "agent_sid", event.SessionID)
 			}
 			cs.mu.Unlock()
@@ -431,12 +446,42 @@ func (f *FeishuChannel) applyStreamEvent(cs *chatState, sessionKey string, state
 		state.ToolFinished(event.ToolUseID, event.IsError)
 	case "result":
 		state.SetFinal(event.Text)
-		cs.mu.Lock()
-		if s, ok := cs.sessions[sessionKey]; ok {
-			s.lastActive = time.Now()
-		}
-		cs.mu.Unlock()
 	}
+}
+
+// transientAgentMarkers flag failures that are almost always a blip in the
+// network path or the model provider rather than a bug in the task itself.
+var transientAgentMarkers = []string{
+	"connection error",
+	"connection reset",
+	"connection refused",
+	"broken pipe",
+	"no such host",
+	"network is unreachable",
+	"i/o timeout",
+	"tls handshake timeout",
+	"unexpected eof",
+	"temporary failure",
+	"too many requests",
+	"rate limit",
+	"bad gateway",
+	"gateway timeout",
+	"service unavailable",
+}
+
+// isTransientAgentError reports whether err looks like a transient
+// network/provider failure worth retrying rather than a real task failure.
+func isTransientAgentError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	for _, marker := range transientAgentMarkers {
+		if strings.Contains(msg, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 // reportRunFailure classifies a failed run and tells the chat what happened.
@@ -457,6 +502,13 @@ func (f *FeishuChannel) reportRunFailure(ctx context.Context, chatID, sessionKey
 		// crash, so the card is never frozen without explanation.
 		slog.Warn("feishu: run aborted by deadline", "chat_id", chatID, "session_key", sessionKey, "cause", cause, "error", err)
 		f.sendChatText(ctx, chatID, "⏱ 任务已中止：执行超时。会话已保留，可发送消息继续，或用 /refork 重新回答。")
+	case isTransientAgentError(err):
+		// A transient network/provider blip (e.g. "Connection error.") — often
+		// right after the agent finished its tool work. Everything executed so far
+		// is already persisted, so tell the user how to continue instead of
+		// reporting the whole task as failed.
+		slog.Warn("feishu: run interrupted by transient error", "chat_id", chatID, "session_key", sessionKey, "cause", cause, "error", err)
+		f.sendChatText(ctx, chatID, fmt.Sprintf("⚠️ 模型连接中断（临时网络/服务问题）：%v。已执行的操作均已保存；会话已保留，直接重发上一条消息即可从当前进度继续。", err))
 	default:
 		slog.Error("feishu: agent run failed", "chat_id", chatID, "session_key", sessionKey, "error", err)
 		f.sendChatText(ctx, chatID, fmt.Sprintf("❌ 任务执行失败: %v", err))
