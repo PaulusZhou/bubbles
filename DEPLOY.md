@@ -22,7 +22,11 @@ git clone <repo-url> bubbles && cd bubbles
 ./deploy.sh
 ```
 
-`deploy.sh` 依次执行：依赖检查 → `make install`（构建 + 装 `/usr/local/bin` + 启动 bubblesd）→ pi 检查 → `invest-system/install.sh`（skills/agents/prompts + subagent 扩展）→ 提示补配置。
+`deploy.sh` 依次执行：依赖检查 → `make service`（构建 + 装 `/usr/local/bin` + 交给 systemd 托管启动 bubblesd；无 systemd 时回退 `make install` nohup 启动）→ pi 检查 → `invest-system/install.sh`（skills/agents/prompts + subagent 扩展）→ 提示补配置。
+
+> **daemon 托管**：推荐 `make service`，systemd 会在 bubblesd 崩溃/被杀/OOM 后自动拉起（`Restart=on-failure`）。
+> 管理用 `systemctl {status,stop,restart} bubblesd`；`bubbles daemon stop` 同样是优雅退出，不会被拉起。
+> 升级二进制用 `make install`（检测到 systemd 单元时会自动 `systemctl restart`）。
 
 ## 2. 手动步骤（脚本跑完后要做的事）
 
@@ -128,7 +132,8 @@ echo '{"keys":[...]}' > ~/.web_search_keys.json   # Tavily（可选）
 | pi 里 skill 不出现 | `settings.json` 的 `skills` 路径是否指向 `invest-system/skills`（`./install.sh` 会修）；`/reload` 或重启 pi |
 | subagent 工具不存在 | `~/.pi/agent/extensions/subagent/` 缺失 → 重跑 `invest-system/install.sh` |
 | 飞书无响应 | 检查 FEISHU_APP_ID/SECRET 环境变量、事件订阅（长连接）、`~/.bubbles/bubblesd.log` |
-| `bubbles` 连不上 daemon | `bubblesd` 未启动 → `make run` 或 `nohup bubblesd &` |
+| `bubbles` 连不上 daemon | `bubblesd` 未启动 → `systemctl start bubblesd`（或 `make service` / `bubbles daemon start`） |
+| daemon 异常退出 | `journalctl -u bubblesd -b` + `~/.bubbles/bubblesd.log`（panic 栈也写进该文件）；systemd 托管下会自动拉起 |
 | bear 模型切换 | `/login anthropic` 后取消 `agents/invest-bear.md` 里 `# model:` 注释（模型异构，防表演性对抗） |
 
 ## 5. 目录速查

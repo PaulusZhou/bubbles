@@ -161,8 +161,9 @@ func (s *Scheduler) Run() error {
 
 	// 等待退出信号
 	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT)
-	sig := <-sigCh
+	signal.Notify(sigCh, syscall.SIGTERM, syscall.SIGINT, syscall.SIGHUP)
+	defer signal.Stop(sigCh)
+	sig := waitForShutdownSignal(sigCh)
 	slog.Info("scheduler: received shutdown signal", "signal", sig)
 
 	// 优雅关闭
@@ -189,6 +190,22 @@ func (s *Scheduler) Run() error {
 
 	slog.Info("scheduler: shutdown complete")
 	return nil
+}
+
+// waitForShutdownSignal 阻塞直到收到真正的退出信号（SIGTERM / SIGINT）。
+//
+// SIGHUP 只代表控制终端断开（SSH 网络闪断、终端窗口关闭等）。守护进程不应随之
+// 退出：之前 SIGHUP 走 Go 默认动作直接终止进程，日志里连一条记录都没有，事后
+// 无法判断死因，所以这里只记日志并继续运行。
+func waitForShutdownSignal(sigCh <-chan os.Signal) os.Signal {
+	for {
+		sig := <-sigCh
+		if sig == syscall.SIGHUP {
+			slog.Info("scheduler: ignoring SIGHUP (terminal hangup), daemon keeps running")
+			continue
+		}
+		return sig
+	}
 }
 
 // scheduleTask adds a task to the cron scheduler.

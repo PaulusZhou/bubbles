@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// 设置日志：同时输出到 stderr 和日志文件
+	// 设置日志：写入日志文件，并保留原始 stderr 副本（控制台 / journald）
 	logPath := filepath.Join(cfg.DataDir, "bubblesd.log")
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
@@ -42,8 +42,21 @@ func main() {
 	}
 	defer logFile.Close()
 
-	multiWriter := io.MultiWriter(os.Stderr, logFile)
-	slog.SetDefault(slog.New(slog.NewTextHandler(multiWriter, &slog.HandlerOptions{
+	// fd 2 指向日志文件：panic / runtime fatal error 的栈回溯只写 fd 2，此前
+	// 被 `> /dev/null` 丢弃，进程“无声死亡”无从排查。
+	console := redirectStderrTo(logFile)
+
+	var logWriter io.Writer = os.Stderr // fd 2 现在指向日志文件
+	if console != nil {
+		if cfi, cerr := console.Stat(); cerr == nil {
+			if lfi, lerr := logFile.Stat(); lerr == nil && !os.SameFile(cfi, lfi) {
+				// 原始 stderr 不是日志文件本身（终端 / journald 管道）时才复制，
+				// 避免同一行写两遍
+				logWriter = io.MultiWriter(os.Stderr, console)
+			}
+		}
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(logWriter, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	})))
 

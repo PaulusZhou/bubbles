@@ -1,0 +1,26 @@
+[Unit]
+Description=Bubbles scheduled task daemon (bubblesd)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/bubblesd
+# HOME 必须显式设置：systemd 系统服务默认不带 $HOME，bubblesd 依赖它定位
+# ~/.bubbles（config.yaml / 数据库 / 日志），缺失时会回退到 /tmp 而启动失败。
+# make service 安装时用实际 HOME 替换 @HOME@。
+Environment=HOME=@HOME@
+# 进程被杀 / 崩溃 / OOM 时自动拉起；`systemctl stop bubblesd` 或 `bubbles daemon stop`
+# 发 SIGTERM 优雅退出（exit 0），不会被拉起
+Restart=on-failure
+RestartSec=5
+KillSignal=SIGTERM
+TimeoutStopSec=30
+# 停止/重启时连同其派生的 pi/claude 子进程一起清理，避免孤儿进程占满内存
+KillMode=control-group
+# bubblesd 自身写 ~/.bubbles/bubblesd.log（panic 栈也进该文件）；journald 留一份副本
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

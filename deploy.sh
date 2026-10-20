@@ -24,8 +24,13 @@ if ! command -v pi >/dev/null 2>&1; then
 fi
 echo "✓ 依赖齐备（git/go/cc/pi）"
 
-# 2) 构建 + 安装 bubbles（含启动 bubblesd）
-make install
+# 2) 构建 + 安装 bubbles，并交给 systemd 托管（崩溃/被杀自动拉起；无 systemd 则回退 nohup）
+if command -v systemctl >/dev/null 2>&1 && make service; then
+  echo "✓ bubblesd 已由 systemd 托管（systemctl {status,stop,restart} bubblesd）"
+else
+  make install
+  echo "⚠ systemd 托管不可用，已用 nohup 常驻（崩溃后不会自动拉起）"
+fi
 
 # 3) 引导 config.yaml（install.sh 以 work_dir 为目标工作区，必须先于装配）
 mkdir -p "$HOME/.bubbles"

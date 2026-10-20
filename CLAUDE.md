@@ -5,7 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run Commands
 
 - `make build` — Build both `bin/bubbles` and `bin/bubblesd` (requires CGO_ENABLED=1 for SQLite)
-- `make install` — Build and copy binaries to `/usr/local/bin/`
+- `make install` — Build and copy binaries to `/usr/local/bin/`, then restart bubblesd (via systemd if the unit is enabled, otherwise `nohup`)
+- `make service` — Install + run bubblesd under systemd (`Restart=on-failure`: auto-restarts after crashes/OOM kills; logs in `journalctl -u bubblesd` and `~/.bubbles/bubblesd.log`, where panic stack traces are written too)
 - `make run` — Build and run `bin/bubblesd` directly
 - `make test` — Run `go test ./...` (no tests exist yet)
 - `make clean` — Remove `bin/`, daemon socket, and PID file
@@ -21,7 +22,7 @@ Bubbles is a scheduled task runner that invokes Claude Code on a cron or one-tim
 - **`bubbles`** (cmd/bubbles/) — Thin Cobra CLI client. Sends IPC requests and exits.
 - **`bubblesd`** (cmd/bubblesd/) — Background daemon. Runs the scheduler, IPC server, and optionally Feishu channel.
 
-The CLI starts the daemon via `syscall.ForkExec` (Linux/macOS only).
+The CLI starts the daemon via `syscall.ForkExec` (Linux/macOS only; the child gets its own session via `Setsid` and its stdio detached from the terminal, so SSH/terminal drops can't kill it — SIGHUP is logged and ignored inside bubblesd).
 
 ### IPC Protocol
 JSON-RPC over Unix socket at `~/.bubbles/bubblesd.sock`. One request per connection — no multiplexing or keepalive. Sixteen methods defined in `internal/ipc/protocol.go` (`task.create`, `task.list`, `task.get`, `task.delete`, `task.pause`, `task.resume`, `task.run`, `task.logs`, `daemon.status`, `session.stats`, `session.export`, `feishu.notify`, `holding.list`, `holding.get`, `holding.upsert`, `holding.delete`).

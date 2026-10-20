@@ -3,7 +3,9 @@ package daemon
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"path/filepath"
+	"syscall"
 	"testing"
 	"time"
 
@@ -829,5 +831,31 @@ func TestHandleSessionExport_RequiresSessionID(t *testing.T) {
 	raw, _ := json.Marshal(ipc.SessionParams{Path: "/tmp/out.html"})
 	if _, err := sched.handleSessionExport(raw); err == nil {
 		t.Error("expected error for empty session id")
+	}
+}
+
+// --- waitForShutdownSignal ---
+
+func TestWaitForShutdownSignal_IgnoresSIGHUP(t *testing.T) {
+	sigCh := make(chan os.Signal, 2)
+	done := make(chan os.Signal, 1)
+	go func() { done <- waitForShutdownSignal(sigCh) }()
+
+	// SIGHUP 只是终端断开，守护进程必须继续运行
+	sigCh <- syscall.SIGHUP
+	select {
+	case sig := <-done:
+		t.Fatalf("SIGHUP should be ignored, but shutdown started with %v", sig)
+	case <-time.After(100 * time.Millisecond):
+	}
+
+	sigCh <- syscall.SIGTERM
+	select {
+	case sig := <-done:
+		if sig != syscall.SIGTERM {
+			t.Fatalf("expected SIGTERM, got %v", sig)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("SIGTERM did not trigger shutdown")
 	}
 }
